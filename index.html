@@ -28,6 +28,35 @@
     <!-- Side Menu -->
     <div class="side-menu" id="sideMenu">
         <h2>Muscle Training Atlas</h2>
+        
+        <!-- Current Mode Display -->
+        <div class="current-mode-display" id="currentModeDisplay">
+            <div class="mode-icon" id="modeIcon">🏢</div>
+            <div>
+                <h4>Current Level</h4>
+                <p id="modeName">Office Level</p>
+            </div>
+        </div>
+        
+        <!-- Mode Switcher -->
+        <div class="mode-switcher">
+            <h4>Switch Level</h4>
+            <div class="mode-buttons">
+                <button class="mode-btn" data-mode="office">
+                    <span class="mode-btn-icon">🏢</span>
+                    <span>Office</span>
+                </button>
+                <button class="mode-btn" data-mode="street">
+                    <span class="mode-btn-icon">🏃</span>
+                    <span>Street</span>
+                </button>
+                <button class="mode-btn" data-mode="gym">
+                    <span class="mode-btn-icon">💪</span>
+                    <span>Gym</span>
+                </button>
+            </div>
+        </div>
+        
         <div class="menu-content">
             <div class="menu-item">
                 <div class="menu-icon">🎯</div>
@@ -50,6 +79,13 @@
                     <p>Monitor your strength gains over time</p>
                 </div>
             </div>
+            <div class="menu-item" id="calorieCalcMenuItem">
+                <div class="menu-icon">🍽️</div>
+                <div>
+                    <h3>Calorie Calculator</h3>
+                    <p>Calculate your daily nutrition needs for muscle growth</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -60,6 +96,14 @@
         
         <!-- Hovered Muscle Display -->
         <div class="muscle-name-display" id="muscleDisplay"></div>
+
+        <!-- View Toggle Button -->
+        <div class="view-toggle-container">
+            <button class="view-toggle-btn" id="viewToggleBtn">
+                <span class="view-toggle-icon">🔄</span>
+                <span id="viewToggleText">Show Back</span>
+            </button>
+        </div>
 
         <!-- SVG Body -->
         <div class="svg-container">
@@ -73,6 +117,155 @@
             <button class="modal-close" id="modalClose">&times;</button>
             <h2 class="modal-title" id="modalTitle">Muscle Exercises</h2>
             <div class="exercises-grid" id="exercisesGrid"></div>
+        </div>
+    </div>
+
+    <!-- Mode Selection Modal (First Visit) -->
+    <div class="mode-selection-overlay" id="modeSelectionOverlay">
+        <div class="mode-selection-modal">
+            <h2>Choose Your Training Level</h2>
+            <p class="mode-selection-subtitle">Select the mode that matches your equipment and experience</p>
+            
+            <div class="mode-selection-grid">
+                <div class="mode-card" data-mode="office">
+                    <div class="mode-card-icon">🏢</div>
+                    <h3>Office Level</h3>
+                    <p class="mode-card-description">Perfect for home or office with minimal equipment</p>
+                    <ul class="mode-card-features">
+                        <li>✓ Bodyweight exercises</li>
+                        <li>✓ Simple movements</li>
+                        <li>✓ Desk-friendly workouts</li>
+                        <li>✓ Beginner-friendly</li>
+                    </ul>
+                    <button class="mode-select-btn" data-mode="office">Select Office</button>
+                </div>
+                
+                <div class="mode-card" data-mode="street">
+                    <div class="mode-card-icon">🏃</div>
+                    <h3>Street Level</h3>
+                    <p class="mode-card-description">Calisthenics and street workout training</p>
+                    <ul class="mode-card-features">
+                        <li>✓ Advanced bodyweight</li>
+                        <li>✓ Pull-up bars</li>
+                        <li>✓ Street workout moves</li>
+                        <li>✓ Intermediate level</li>
+                    </ul>
+                    <button class="mode-select-btn" data-mode="street">Select Street</button>
+                </div>
+                
+                <div class="mode-card" data-mode="gym">
+                    <div class="mode-card-icon">💪</div>
+                    <h3>Gym Level</h3>
+                    <p class="mode-card-description">Full gym equipment and advanced training</p>
+                    <ul class="mode-card-features">
+                        <li>✓ Barbells & dumbbells</li>
+                        <li>✓ Machines & cables</li>
+                        <li>✓ Heavy compound lifts</li>
+                        <li>✓ Advanced techniques</li>
+                    </ul>
+                    <button class="mode-select-btn" data-mode="gym">Select Gym</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calorie Calculator Overlay -->
+    <div class="calorie-calculator-overlay" id="calorieCalculatorOverlay">
+        <div class="calorie-calculator-modal">
+            <button class="calc-close" id="calcClose">&times;</button>
+            <h2>💪 Calorie & Macro Calculator</h2>
+            <p class="calc-subtitle">Calculate your daily nutrition needs for optimal muscle growth</p>
+            
+            <form class="calc-form" id="calcForm">
+                <div class="calc-row">
+                    <div class="calc-input-group">
+                        <label for="calcSex">Sex</label>
+                        <select id="calcSex" required>
+                            <option value="">Select...</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    
+                    <div class="calc-input-group">
+                        <label for="calcAge">Age (years)</label>
+                        <input type="number" id="calcAge" min="15" max="80" required placeholder="25">
+                    </div>
+                </div>
+                
+                <div class="calc-row">
+                    <div class="calc-input-group">
+                        <label for="calcHeight">Height (cm)</label>
+                        <input type="number" id="calcHeight" min="140" max="220" required placeholder="175">
+                    </div>
+                    
+                    <div class="calc-input-group">
+                        <label for="calcWeight">Weight (kg)</label>
+                        <input type="number" id="calcWeight" min="40" max="200" step="0.1" required placeholder="70">
+                    </div>
+                </div>
+                
+                <div class="calc-input-group">
+                    <label for="calcActivity">Activity Level</label>
+                    <select id="calcActivity" required>
+                        <option value="">Select...</option>
+                        <option value="1.2">Sedentary (little or no exercise)</option>
+                        <option value="1.375">Lightly Active (exercise 1-3 days/week)</option>
+                        <option value="1.55">Moderately Active (exercise 3-5 days/week)</option>
+                        <option value="1.725">Very Active (exercise 6-7 days/week)</option>
+                        <option value="1.9">Extra Active (physical job + exercise daily)</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="calc-submit-btn">Calculate Nutrition Plan</button>
+            </form>
+            
+            <div class="calc-results" id="calcResults" style="display: none;">
+                <h3>📊 Your Daily Nutrition Plan for Muscle Growth</h3>
+                
+                <div class="result-card">
+                    <div class="result-label">Daily Calories</div>
+                    <div class="result-value" id="resultCalories">0</div>
+                    <div class="result-note">+15% surplus for muscle building</div>
+                </div>
+                
+                <div class="macros-grid">
+                    <div class="macro-card protein">
+                        <div class="macro-icon">🥩</div>
+                        <div class="macro-name">Protein</div>
+                        <div class="macro-grams" id="resultProteinG">0g</div>
+                        <div class="macro-calories" id="resultProteinCal">0 cal</div>
+                        <div class="macro-percentage">30%</div>
+                    </div>
+                    
+                    <div class="macro-card carbs">
+                        <div class="macro-icon">🍚</div>
+                        <div class="macro-name">Carbs</div>
+                        <div class="macro-grams" id="resultCarbsG">0g</div>
+                        <div class="macro-calories" id="resultCarbsCal">0 cal</div>
+                        <div class="macro-percentage">45%</div>
+                    </div>
+                    
+                    <div class="macro-card fats">
+                        <div class="macro-icon">🥑</div>
+                        <div class="macro-name">Fats</div>
+                        <div class="macro-grams" id="resultFatsG">0g</div>
+                        <div class="macro-calories" id="resultFatsCal">0 cal</div>
+                        <div class="macro-percentage">25%</div>
+                    </div>
+                </div>
+                
+                <div class="result-tips">
+                    <h4>💡 Tips for Muscle Growth:</h4>
+                    <ul>
+                        <li>Aim for 1.6-2.2g of protein per kg of body weight</li>
+                        <li>Eat in a slight caloric surplus (+10-15%)</li>
+                        <li>Prioritize whole foods and consistent meal timing</li>
+                        <li>Stay hydrated (3-4 liters of water daily)</li>
+                        <li>Combine with progressive resistance training</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 
