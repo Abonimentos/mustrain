@@ -958,7 +958,77 @@ viewToggleBtn.addEventListener('click', () => {
     
     // Clear muscle display when switching views
     muscleDisplay.classList.remove('visible');
+    
+    // Re-setup SVG interactions after view change
+    setTimeout(setupSVGInteractions, 100);
 });
+
+// ============================
+// SHORTS TOGGLE (ON/OFF)
+// ============================
+
+const shortsToggleBtn = document.getElementById('shortsToggleBtn');
+const shortsToggleText = document.getElementById('shortsToggleText');
+let shortsVisible = true; // Shorts are ON by default
+
+shortsToggleBtn.addEventListener('click', () => {
+    // Wait a tiny bit to ensure SVG is fully loaded
+    setTimeout(() => {
+        const svgDoc = bodySvg.contentDocument;
+        if (!svgDoc) {
+            console.log('SVG not loaded yet');
+            alert('Please wait for the body image to load before toggling shorts.');
+            return;
+        }
+        toggleShorts(svgDoc);
+    }, 50);
+});
+
+function toggleShorts(svgDoc) {
+    // Toggle shorts visibility
+    shortsVisible = !shortsVisible;
+    
+    // Find and toggle BOTH shorts elements (so it works when switching views)
+    const frontShorts = svgDoc.getElementById('image0_5_41');
+    const backShorts = svgDoc.getElementById('image0_5_4');
+    
+    if (frontShorts) {
+        // Use multiple methods to ensure shorts hide properly AND don't block clicks
+        frontShorts.style.visibility = shortsVisible ? 'visible' : 'hidden';
+        frontShorts.style.opacity = shortsVisible ? '1' : '0';
+        frontShorts.style.pointerEvents = shortsVisible ? 'auto' : 'none';
+        frontShorts.setAttribute('pointer-events', shortsVisible ? 'auto' : 'none'); // Set as SVG attribute too
+        // Also try setting the display attribute directly on the SVG element
+        if (shortsVisible) {
+            frontShorts.removeAttribute('display');
+        } else {
+            frontShorts.setAttribute('display', 'none');
+        }
+        console.log('Front shorts toggled:', shortsVisible ? 'visible' : 'hidden');
+        console.log('Front shorts pointer-events:', frontShorts.style.pointerEvents);
+    } else {
+        console.log('Front shorts element not found');
+    }
+    
+    if (backShorts) {
+        backShorts.style.visibility = shortsVisible ? 'visible' : 'hidden';
+        backShorts.style.opacity = shortsVisible ? '1' : '0';
+        backShorts.style.pointerEvents = shortsVisible ? 'auto' : 'none';
+        backShorts.setAttribute('pointer-events', shortsVisible ? 'auto' : 'none'); // Set as SVG attribute too
+        if (shortsVisible) {
+            backShorts.removeAttribute('display');
+        } else {
+            backShorts.setAttribute('display', 'none');
+        }
+        console.log('Back shorts toggled:', shortsVisible ? 'visible' : 'hidden');
+        console.log('Back shorts pointer-events:', backShorts.style.pointerEvents);
+    } else {
+        console.log('Back shorts element not found');
+    }
+    
+    // Update button text
+    shortsToggleText.textContent = shortsVisible ? 'Shorts: On' : 'Shorts: Off';
+}
 
 // ============================
 // CALORIE CALCULATOR
@@ -980,13 +1050,21 @@ calorieCalcMenuItem.addEventListener('click', () => {
 
 // Close calculator
 calcClose.addEventListener('click', () => {
+    calorieCalculatorOverlay.classList.add('closing'); // Disable all pointer events immediately
     calorieCalculatorOverlay.classList.remove('active');
+    setTimeout(() => {
+        calorieCalculatorOverlay.classList.remove('closing');
+    }, 300);
 });
 
 // Close calculator when clicking outside
 calorieCalculatorOverlay.addEventListener('click', (e) => {
     if (e.target === calorieCalculatorOverlay) {
+        calorieCalculatorOverlay.classList.add('closing'); // Disable all pointer events immediately
         calorieCalculatorOverlay.classList.remove('active');
+        setTimeout(() => {
+            calorieCalculatorOverlay.classList.remove('closing');
+        }, 300);
     }
 });
 
@@ -1050,12 +1128,429 @@ calcForm.addEventListener('submit', (e) => {
 });
 
 // ============================
+// EXERCISE TIMER (COUNTDOWN)
+// ============================
+
+const timerDisplay = document.getElementById('timerDisplay');
+const timerStart = document.getElementById('timerStart');
+const timerReset = document.getElementById('timerReset');
+const presetBtns = document.querySelectorAll('.preset-btn');
+
+let timerInterval = null;
+let timerSeconds = 45;
+let timerRunning = false;
+
+// Preset button handlers
+presetBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Remove active from all
+        presetBtns.forEach(b => b.classList.remove('active'));
+        // Add active to clicked
+        btn.classList.add('active');
+        
+        // Set timer value
+        timerSeconds = parseInt(btn.dataset.seconds);
+        timerDisplay.textContent = timerSeconds;
+        
+        // Stop timer if running
+        if (timerRunning) {
+            stopTimer();
+        }
+    });
+});
+
+// Start/Pause button
+timerStart.addEventListener('click', () => {
+    if (timerRunning) {
+        // Pause
+        stopTimer();
+    } else {
+        // Start
+        startTimer();
+    }
+});
+
+// Reset button
+timerReset.addEventListener('click', () => {
+    stopTimer();
+    const activePreset = document.querySelector('.preset-btn.active');
+    timerSeconds = activePreset ? parseInt(activePreset.dataset.seconds) : 45;
+    timerDisplay.textContent = timerSeconds;
+});
+
+function startTimer() {
+    timerRunning = true;
+    timerStart.classList.add('running');
+    timerStart.querySelector('span:last-child').textContent = 'Pause';
+    timerStart.querySelector('.timer-btn-icon').textContent = '⏸';
+    timerDisplay.classList.add('running');
+    
+    timerInterval = setInterval(() => {
+        timerSeconds--;
+        timerDisplay.textContent = timerSeconds;
+        
+        if (timerSeconds <= 0) {
+            stopTimer();
+            timerDisplay.textContent = '0';
+            // Optional: Play a sound or show notification
+            alert('Time\'s up! 💪');
+        }
+    }, 1000);
+}
+
+function stopTimer() {
+    timerRunning = false;
+    clearInterval(timerInterval);
+    timerStart.classList.remove('running');
+    timerStart.querySelector('span:last-child').textContent = 'Start';
+    timerStart.querySelector('.timer-btn-icon').textContent = '▶';
+    timerDisplay.classList.remove('running');
+}
+
+// ============================
+// WARM-UP WARNING (GYM MODE)
+// ============================
+
+const warmupToast = document.getElementById('warmupToast');
+const warmupToastClose = document.getElementById('warmupToastClose');
+
+function showWarmupWarning() {
+    // Check if already shown this session
+    if (sessionStorage.getItem('warmupWarningShown')) {
+        return;
+    }
+    
+    // Show toast
+    setTimeout(() => {
+        warmupToast.classList.add('show');
+    }, 500);
+    
+    // Auto-hide after 8 seconds
+    setTimeout(() => {
+        warmupToast.classList.remove('show');
+    }, 8500);
+    
+    // Mark as shown
+    sessionStorage.setItem('warmupWarningShown', 'true');
+}
+
+// Close button
+warmupToastClose.addEventListener('click', () => {
+    warmupToast.classList.remove('show');
+});
+
+// Check for Gym mode switch in existing mode buttons
+const modeBtnsSwitcher = document.querySelectorAll('.mode-btn');
+modeBtnsSwitcher.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        if (mode === 'gym') {
+            showWarmupWarning();
+        }
+    });
+});
+
+// Also check mode selection modal buttons
+const modeSelectBtns = document.querySelectorAll('.mode-select-btn');
+modeSelectBtns.forEach(btn => {
+    const originalClick = btn.onclick;
+    btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        if (mode === 'gym') {
+            setTimeout(() => {
+                showWarmupWarning();
+            }, 600);
+        }
+    });
+});
+
+// ============================
+// MOTIVATIONAL QUOTES
+// ============================
+
+const motivationalQuote = document.getElementById('motivationalQuote');
+const quoteText = document.getElementById('quoteText');
+const quoteAuthor = document.getElementById('quoteAuthor');
+const quotesToggle = document.getElementById('quotesToggle');
+
+const fitnessQuotes = [
+    { text: "The only bad workout is the one that didn't happen.", author: "Unknown" },
+    { text: "Your body can stand almost anything. It's your mind you have to convince.", author: "Unknown" },
+    { text: "Strength doesn't come from what you can do. It comes from overcoming what you thought you couldn't.", author: "Rikki Rogers" },
+    { text: "The pain you feel today will be the strength you feel tomorrow.", author: "Arnold Schwarzenegger" },
+    { text: "Success isn't always about greatness. It's about consistency.", author: "Dwayne Johnson" },
+    { text: "Train like a beast, look like a beauty.", author: "Unknown" },
+    { text: "The only way to define your limits is by going beyond them.", author: "Arthur C. Clarke" },
+    { text: "Sweat is just fat crying.", author: "Unknown" },
+    { text: "Don't wish for it, work for it.", author: "Unknown" },
+    { text: "Push yourself because no one else is going to do it for you.", author: "Unknown" },
+    { text: "Great things never come from comfort zones.", author: "Unknown" },
+    { text: "The body achieves what the mind believes.", author: "Napoleon Hill" },
+    { text: "If it doesn't challenge you, it doesn't change you.", author: "Fred DeVito" },
+    { text: "Progress, not perfection.", author: "Unknown" },
+    { text: "Believe in yourself and all that you are.", author: "Christian D. Larson" }
+];
+
+let quotesEnabled = false;
+let quoteInterval = null;
+let shownQuotes = [];
+let currentQuoteIndex = -1;
+
+// Load quote preference from localStorage
+const savedQuotePreference = localStorage.getItem('quotesEnabled');
+if (savedQuotePreference === 'true') {
+    quotesToggle.checked = true;
+    quotesEnabled = true;
+    startQuoteRotation();
+}
+
+// Toggle handler
+quotesToggle.addEventListener('change', (e) => {
+    quotesEnabled = e.target.checked;
+    localStorage.setItem('quotesEnabled', quotesEnabled);
+    
+    if (quotesEnabled) {
+        startQuoteRotation();
+    } else {
+        stopQuoteRotation();
+    }
+});
+
+function startQuoteRotation() {
+    showRandomQuote();
+    quoteInterval = setInterval(() => {
+        hideQuote();
+        setTimeout(() => {
+            showRandomQuote();
+        }, 1000); // 1 second gap between quotes
+    }, 12000); // Show each quote for 12 seconds (1s fade in + 10s visible + 1s fade out)
+}
+
+function stopQuoteRotation() {
+    clearInterval(quoteInterval);
+    hideQuote();
+    shownQuotes = [];
+}
+
+function showRandomQuote() {
+    // If all quotes shown, reset
+    if (shownQuotes.length === fitnessQuotes.length) {
+        shownQuotes = [];
+    }
+    
+    // Get available quotes
+    const availableQuotes = fitnessQuotes.filter((_, index) => !shownQuotes.includes(index));
+    
+    // Pick random quote
+    const randomIndex = Math.floor(Math.random() * availableQuotes.length);
+    const selectedQuote = availableQuotes[randomIndex];
+    
+    // Find original index
+    currentQuoteIndex = fitnessQuotes.indexOf(selectedQuote);
+    shownQuotes.push(currentQuoteIndex);
+    
+    // Display quote
+    quoteText.textContent = selectedQuote.text;
+    quoteAuthor.textContent = selectedQuote.author;
+    
+    // Show with delay
+    setTimeout(() => {
+        motivationalQuote.classList.add('visible');
+    }, 100);
+    
+    // Hide after 10 seconds
+    setTimeout(() => {
+        hideQuote();
+    }, 10000);
+}
+
+function hideQuote() {
+    motivationalQuote.classList.remove('visible');
+}
+
+// ============================
+// TRAINING PERSPECTIVES (FEMALE CONSIDERATIONS)
+// ============================
+
+const perspectiveToggle = document.getElementById('perspectiveToggle');
+const trainingInfoMenuItem = document.getElementById('trainingInfoMenuItem');
+const trainingInfoOverlay = document.getElementById('trainingInfoOverlay');
+const infoClose = document.getElementById('infoClose');
+
+let femalePerspectiveEnabled = false;
+
+// Load perspective preference from localStorage
+const savedPerspective = localStorage.getItem('femalePerspective');
+if (savedPerspective === 'true') {
+    perspectiveToggle.checked = true;
+    femalePerspectiveEnabled = true;
+}
+
+// Toggle handler
+perspectiveToggle.addEventListener('change', (e) => {
+    femalePerspectiveEnabled = e.target.checked;
+    localStorage.setItem('femalePerspective', femalePerspectiveEnabled);
+    
+    // If a modal is currently open, refresh it
+    if (exerciseModal.classList.contains('active')) {
+        const currentMuscleName = document.getElementById('modalTitle').textContent.replace(' Exercises', '');
+        showExercises(currentMuscleName);
+    }
+});
+
+// Open training info modal
+trainingInfoMenuItem.addEventListener('click', () => {
+    trainingInfoOverlay.classList.add('active');
+    // Close side menu
+    sideMenu.classList.remove('active');
+    menuToggle.classList.remove('active');
+});
+
+// Close training info modal
+infoClose.addEventListener('click', () => {
+    trainingInfoOverlay.classList.add('closing'); // Disable all pointer events immediately
+    trainingInfoOverlay.classList.remove('active');
+    setTimeout(() => {
+        trainingInfoOverlay.classList.remove('closing');
+    }, 300);
+});
+
+// Close when clicking outside
+trainingInfoOverlay.addEventListener('click', (e) => {
+    if (e.target === trainingInfoOverlay) {
+        trainingInfoOverlay.classList.add('closing'); // Disable all pointer events immediately
+        trainingInfoOverlay.classList.remove('active');
+        setTimeout(() => {
+            trainingInfoOverlay.classList.remove('closing');
+        }, 300);
+    }
+});
+
+// ============================
+// WORKOUT SHORTS
+// ============================
+
+const workoutShortsMenuItem = document.getElementById('workoutShortsMenuItem');
+const workoutShortsOverlay = document.getElementById('workoutShortsOverlay');
+const shortsClose = document.getElementById('shortsClose');
+
+// Open workout shorts modal
+workoutShortsMenuItem.addEventListener('click', () => {
+    workoutShortsOverlay.classList.add('active');
+    // Close side menu
+    sideMenu.classList.remove('active');
+    menuToggle.classList.remove('active');
+});
+
+// Close workout shorts modal
+shortsClose.addEventListener('click', () => {
+    workoutShortsOverlay.classList.add('closing'); // Disable all pointer events immediately
+    workoutShortsOverlay.classList.remove('active');
+    setTimeout(() => {
+        workoutShortsOverlay.classList.remove('closing');
+    }, 300);
+});
+
+// Close when clicking outside
+workoutShortsOverlay.addEventListener('click', (e) => {
+    if (e.target === workoutShortsOverlay) {
+        workoutShortsOverlay.classList.add('closing'); // Disable all pointer events immediately
+        workoutShortsOverlay.classList.remove('active');
+        setTimeout(() => {
+            workoutShortsOverlay.classList.remove('closing');
+        }, 300);
+    }
+});
+
+// Female-specific exercise modifications
+// This adds additional context and safety notes to exercises when female perspective is enabled
+const femaleExerciseModifications = {
+    // Lower Body (emphasis on hip-dominant movements)
+    "Left Quadriceps": {
+        notes: "👩 Focus on controlled knee alignment to prevent valgus collapse. Keep knees tracking over toes.",
+        emphasis: "Lower body exercises are excellent for female physiology - natural strength advantage here!"
+    },
+    "Right Quadriceps": {
+        notes: "👩 Focus on controlled knee alignment to prevent valgus collapse. Keep knees tracking over toes.",
+        emphasis: "Lower body exercises are excellent for female physiology - natural strength advantage here!"
+    },
+    "Left Glutes": {
+        notes: "👩 Glutes are a natural strength area! Emphasize hip extension and posterior pelvic tilt.",
+        emphasis: "Excellent for female athletes - focus on hip-dominant patterns for maximum effectiveness."
+    },
+    "Right Glutes": {
+        notes: "👩 Glutes are a natural strength area! Emphasize hip extension and posterior pelvic tilt.",
+        emphasis: "Excellent for female athletes - focus on hip-dominant patterns for maximum effectiveness."
+    },
+    "Left Hamstrings": {
+        notes: "👩 Critical for ACL protection (4-6x higher injury risk). Prioritize hamstring strength.",
+        emphasis: "Essential for knee safety - hamstring strength reduces injury risk significantly."
+    },
+    "Right Hamstrings": {
+        notes: "👩 Critical for ACL protection (4-6x higher injury risk). Prioritize hamstring strength.",
+        emphasis: "Essential for knee safety - hamstring strength reduces injury risk significantly."
+    },
+    
+    // Core (pelvic floor awareness)
+    "Abs": {
+        notes: "👩 Be mindful of pelvic floor engagement. Avoid bearing down during exercises.",
+        emphasis: "Focus on core stability over maximum load - essential for spinal and pelvic health."
+    },
+    
+    // Upper Body (focus on stability)
+    "Left Chest": {
+        notes: "👩 Focus on controlled movements. Ensure shoulder stability throughout the range of motion.",
+        emphasis: "Build gradually - upper body strength develops effectively with consistent training."
+    },
+    "Right Chest": {
+        notes: "👩 Focus on controlled movements. Ensure shoulder stability throughout the range of motion.",
+        emphasis: "Build gradually - upper body strength develops effectively with consistent training."
+    },
+    "Left Shoulder": {
+        notes: "👩 Prioritize rotator cuff activation. Greater joint laxity requires focus on stability.",
+        emphasis: "Shoulder stability is key - strengthen rotator cuff to prevent impingement."
+    },
+    "Right Shoulder": {
+        notes: "👩 Prioritize rotator cuff activation. Greater joint laxity requires focus on stability.",
+        emphasis: "Shoulder stability is key - strengthen rotator cuff to prevent impingement."
+    },
+    
+    // Back (posture emphasis)
+    "Upper Back": {
+        notes: "👩 Excellent for posture correction. Focus on scapular retraction and thoracic extension.",
+        emphasis: "Upper back strength improves posture and reduces shoulder strain."
+    },
+    "Lower Back": {
+        notes: "👩 Maintain neutral spine. Be especially cautious during menstrual cycle when ligament laxity increases.",
+        emphasis: "Core stability protects lower back - engage deep abdominals before lifting."
+    }
+};
+
+// ============================
 // SVG LOADED HANDLER
 // ============================
 
 function setupSVGInteractions() {
     const svgDoc = bodySvg.contentDocument;
     if (!svgDoc) return;
+    
+    // Make sure shorts don't block muscle clicks and respect toggle state
+    const frontShorts = svgDoc.getElementById('image0_5_41');
+    const backShorts = svgDoc.getElementById('image0_5_4');
+    if (frontShorts) {
+        frontShorts.style.pointerEvents = 'none';
+        frontShorts.setAttribute('pointer-events', 'none'); // Set as SVG attribute too
+        frontShorts.style.visibility = shortsVisible ? 'visible' : 'hidden';
+        frontShorts.style.opacity = shortsVisible ? '1' : '0';
+        if (!shortsVisible) frontShorts.setAttribute('display', 'none');
+    }
+    if (backShorts) {
+        backShorts.style.pointerEvents = 'none';
+        backShorts.setAttribute('pointer-events', 'none'); // Set as SVG attribute too
+        backShorts.style.visibility = shortsVisible ? 'visible' : 'hidden';
+        backShorts.style.opacity = shortsVisible ? '1' : '0';
+        if (!shortsVisible) backShorts.setAttribute('display', 'none');
+    }
     
     // Make SVG background transparent
     const svgElement = svgDoc.querySelector('svg');
@@ -1128,6 +1623,15 @@ function setupSVGInteractions() {
             });
         }
     });
+    
+    // Reset all muscle highlights when mouse leaves SVG container
+    const svgContainer = document.querySelector('.svg-container');
+    if (svgContainer) {
+        svgContainer.addEventListener('mouseleave', () => {
+            resetMuscleHighlighting();
+            muscleDisplay.classList.remove('visible');
+        });
+    }
 }
 
 bodySvg.addEventListener('load', setupSVGInteractions);
@@ -1157,22 +1661,62 @@ function showExercises(muscleName) {
     
     // Get modal content element
     const modalContent = document.querySelector('.modal-content');
+    const exerciseTimer = document.getElementById('exerciseTimer');
     
     // Special styling for Head
     if (muscleName === 'Head') {
         modalContent.classList.add('head-modal');
         
+        // Hide timer for Head (mental exercises don't need physical timer)
+        if (exerciseTimer) {
+            exerciseTimer.style.display = 'none';
+        }
+        
         // Add special message for head
         const headMessage = document.createElement('p');
         headMessage.style.textAlign = 'center';
-        headMessage.style.fontSize = '18px';
+        headMessage.style.fontSize = '20px'; // Increased from 18px
         headMessage.style.color = '#a855f7';
         headMessage.style.marginBottom = '24px';
         headMessage.style.fontWeight = '600';
-        headMessage.textContent = '🧠 You can only upgrade the head with knowledge';
+        headMessage.innerHTML = '<span style="font-size: 36px;">🧠</span> You can only upgrade the head with knowledge'; // Larger brain emoji
         exercisesGrid.appendChild(headMessage);
     } else {
         modalContent.classList.remove('head-modal');
+        
+        // Show timer for physical exercises
+        if (exerciseTimer) {
+            exerciseTimer.style.display = 'block';
+        }
+    }
+    
+    // Add female perspective banner if enabled
+    if (femalePerspectiveEnabled && femaleExerciseModifications[muscleName]) {
+        const femaleBanner = document.createElement('div');
+        femaleBanner.className = 'female-perspective-banner';
+        femaleBanner.style.cssText = `
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(88, 28, 135, 0.15));
+            border: 2px solid rgba(168, 85, 247, 0.4);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 24px;
+        `;
+        
+        const modification = femaleExerciseModifications[muscleName];
+        femaleBanner.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                <span style="font-size: 28px;">🎓</span>
+                <h4 style="font-size: 18px; font-weight: 700; color: #a855f7; margin: 0;">Female Training Perspective</h4>
+            </div>
+            <div style="background: rgba(0, 0, 0, 0.3); border-left: 3px solid #a855f7; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                <p style="font-size: 14px; color: rgba(255, 255, 255, 0.9); margin: 0; line-height: 1.6;">${modification.notes}</p>
+            </div>
+            <p style="font-size: 14px; color: rgba(255, 255, 255, 0.85); margin: 0; line-height: 1.6; font-style: italic;">
+                💡 ${modification.emphasis}
+            </p>
+        `;
+        
+        exercisesGrid.appendChild(femaleBanner);
     }
     
     // Create exercise cards
@@ -1200,14 +1744,38 @@ function showExercises(muscleName) {
 // CLOSE MODAL
 // ============================
 
+// Function to reset muscle highlighting in SVG
+function resetMuscleHighlighting() {
+    const svgDoc = bodySvg.contentDocument;
+    if (!svgDoc) return;
+    
+    const muscles = svgDoc.querySelectorAll('[id*="Biceps"], [id*="Triceps"], [id*="Chest"], [id*="Shoulder"], [id*="Forearm"], [id*="Abs"], [id*="Obliques"], [id*="Quadriceps"], [id*="Hamstrings"], [id*="Calves"], [id*="Glutes"], [id*="Upper_Back"], [id*="Lower_Back"], [id*="Head"], [id*="Traps"], [id*="Lats"]');
+    
+    muscles.forEach(muscle => {
+        muscle.style.fill = '#9C9C9C';
+        muscle.style.filter = '';
+    });
+}
+
 modalClose.addEventListener('click', () => {
+    exerciseModal.classList.add('closing'); // Disable all pointer events immediately
     exerciseModal.classList.remove('active');
+    resetMuscleHighlighting();
+    // Remove closing class after animation completes
+    setTimeout(() => {
+        exerciseModal.classList.remove('closing');
+    }, 300);
 });
 
 // Close modal when clicking outside
 exerciseModal.addEventListener('click', (e) => {
     if (e.target === exerciseModal) {
+        exerciseModal.classList.add('closing'); // Disable all pointer events immediately
         exerciseModal.classList.remove('active');
+        resetMuscleHighlighting();
+        setTimeout(() => {
+            exerciseModal.classList.remove('closing');
+        }, 300);
     }
 });
 
@@ -1215,7 +1783,12 @@ exerciseModal.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (exerciseModal.classList.contains('active')) {
+            exerciseModal.classList.add('closing'); // Disable all pointer events immediately
             exerciseModal.classList.remove('active');
+            resetMuscleHighlighting();
+            setTimeout(() => {
+                exerciseModal.classList.remove('closing');
+            }, 300);
         }
     }
 });

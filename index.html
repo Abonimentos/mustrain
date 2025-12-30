@@ -58,32 +58,55 @@
         </div>
         
         <div class="menu-content">
-            <div class="menu-item">
-                <div class="menu-icon">🎯</div>
-                <div>
-                    <h3>Interactive Training</h3>
-                    <p>Click any muscle group to see targeted exercises</p>
-                </div>
-            </div>
-            <div class="menu-item">
-                <div class="menu-icon">💪</div>
-                <div>
-                    <h3>Progressive Overload</h3>
-                    <p>Gradually increase weight, reps, or sets</p>
-                </div>
-            </div>
-            <div class="menu-item">
-                <div class="menu-icon">📈</div>
-                <div>
-                    <h3>Track Progress</h3>
-                    <p>Monitor your strength gains over time</p>
-                </div>
-            </div>
             <div class="menu-item" id="calorieCalcMenuItem">
                 <div class="menu-icon">🍽️</div>
                 <div>
                     <h3>Calorie Calculator</h3>
                     <p>Calculate your daily nutrition needs for muscle growth</p>
+                </div>
+            </div>
+            
+            <!-- Motivational Quotes Toggle -->
+            <div class="menu-item menu-toggle-item" id="quotesToggleItem">
+                <div class="menu-icon">💬</div>
+                <div style="flex: 1;">
+                    <h3>Motivational Quotes</h3>
+                    <p>Display inspiring quotes during training</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="quotesToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            
+            <!-- Training Perspectives Toggle -->
+            <div class="menu-item menu-toggle-item" id="perspectiveToggleItem">
+                <div class="menu-icon">🎓</div>
+                <div style="flex: 1;">
+                    <h3>Training Perspectives</h3>
+                    <p>Female-specific exercise considerations</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="perspectiveToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            
+            <!-- Training Info / Research -->
+            <div class="menu-item" id="trainingInfoMenuItem">
+                <div class="menu-icon">📚</div>
+                <div>
+                    <h3>Training Research</h3>
+                    <p>Learn about exercise science and physiology</p>
+                </div>
+            </div>
+            
+            <!-- Workout Shorts -->
+            <div class="menu-item" id="workoutShortsMenuItem">
+                <div class="menu-icon">🎬</div>
+                <div>
+                    <h3>Workout Shorts</h3>
+                    <p>Quick exercise demonstrations and form tips</p>
                 </div>
             </div>
         </div>
@@ -97,11 +120,15 @@
         <!-- Hovered Muscle Display -->
         <div class="muscle-name-display" id="muscleDisplay"></div>
 
-        <!-- View Toggle Button -->
+        <!-- View Toggle Buttons -->
         <div class="view-toggle-container">
             <button class="view-toggle-btn" id="viewToggleBtn">
                 <span class="view-toggle-icon">🔄</span>
                 <span id="viewToggleText">Show Back</span>
+            </button>
+            <button class="view-toggle-btn shorts-toggle-btn" id="shortsToggleBtn">
+                <span class="view-toggle-icon">🩳</span>
+                <span id="shortsToggleText">Shorts: On</span>
             </button>
         </div>
 
@@ -116,6 +143,32 @@
         <div class="modal-content">
             <button class="modal-close" id="modalClose">&times;</button>
             <h2 class="modal-title" id="modalTitle">Muscle Exercises</h2>
+            
+            <!-- Countdown Timer (Exercise-Level Feature) -->
+            <div class="exercise-timer" id="exerciseTimer">
+                <div class="timer-header">
+                    <span class="timer-icon">⏱️</span>
+                    <span class="timer-label">Exercise Timer</span>
+                </div>
+                <div class="timer-display" id="timerDisplay">45</div>
+                <div class="timer-presets">
+                    <button class="preset-btn" data-seconds="30">30s</button>
+                    <button class="preset-btn active" data-seconds="45">45s</button>
+                    <button class="preset-btn" data-seconds="60">60s</button>
+                    <button class="preset-btn" data-seconds="90">90s</button>
+                </div>
+                <div class="timer-controls">
+                    <button class="timer-btn timer-start" id="timerStart">
+                        <span class="timer-btn-icon">▶</span>
+                        <span>Start</span>
+                    </button>
+                    <button class="timer-btn timer-reset" id="timerReset">
+                        <span class="timer-btn-icon">↻</span>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            </div>
+            
             <div class="exercises-grid" id="exercisesGrid"></div>
         </div>
     </div>
@@ -189,14 +242,14 @@
                     
                     <div class="calc-input-group">
                         <label for="calcAge">Age (years)</label>
-                        <input type="number" id="calcAge" min="15" max="80" required placeholder="25">
+                        <input type="number" id="calcAge" min="15" max="120" required placeholder="25">
                     </div>
                 </div>
                 
                 <div class="calc-row">
                     <div class="calc-input-group">
                         <label for="calcHeight">Height (cm)</label>
-                        <input type="number" id="calcHeight" min="140" max="220" required placeholder="175">
+                        <input type="number" id="calcHeight" min="140" max="240" required placeholder="175">
                     </div>
                     
                     <div class="calc-input-group">
@@ -269,6 +322,228 @@
         </div>
     </div>
 
+    <!-- Warm-up Warning Toast (Safety Feature) -->
+    <div class="warmup-toast" id="warmupToast">
+        <div class="warmup-toast-icon">⚠️</div>
+        <div class="warmup-toast-content">
+            <div class="warmup-toast-title">Safety First!</div>
+            <div class="warmup-toast-message">Warm up before starting intense exercises to avoid injuries.</div>
+        </div>
+        <button class="warmup-toast-close" id="warmupToastClose">&times;</button>
+    </div>
+
+    <!-- Motivational Quotes Container (Optional UX Feature) -->
+    <div class="motivational-quote" id="motivationalQuote">
+        <div class="quote-text" id="quoteText"></div>
+        <div class="quote-author" id="quoteAuthor"></div>
+    </div>
+
+    <!-- Training Research / Education Modal -->
+    <div class="training-info-overlay" id="trainingInfoOverlay">
+        <div class="training-info-modal">
+            <button class="info-close" id="infoClose">&times;</button>
+            <h2>📚 Training Science & Research</h2>
+            <p class="info-subtitle">Evidence-based exercise physiology and training considerations</p>
+            
+            <div class="info-section">
+                <div class="info-section-header">
+                    <span class="info-icon">🎓</span>
+                    <h3>General Training Principles</h3>
+                </div>
+                <p>Effective resistance training follows universal principles: progressive overload, adequate recovery, proper form, and consistency. These apply to all individuals regardless of sex.</p>
+                <ul class="info-list">
+                    <li>Progressive Overload: Gradually increase weight, reps, or volume</li>
+                    <li>Recovery: Allow 48-72 hours between training the same muscle group</li>
+                    <li>Nutrition: Adequate protein (1.6-2.2g per kg body weight) and calories</li>
+                    <li>Form: Proper technique prevents injury and maximizes results</li>
+                </ul>
+            </div>
+            
+            <div class="info-section female-specific">
+                <div class="info-section-header">
+                    <span class="info-icon">👩</span>
+                    <h3>Female-Specific Training Considerations</h3>
+                </div>
+                <p>While training principles are universal, female physiology presents unique considerations that can optimize training outcomes and prevent injury.</p>
+                
+                <div class="info-subsection">
+                    <h4>🦴 Biomechanical Differences</h4>
+                    <ul class="info-list">
+                        <li><strong>Wider Q-Angle:</strong> Increased hip width affects knee tracking; emphasize proper alignment in squats and lunges</li>
+                        <li><strong>Joint Laxity:</strong> Greater ligament elasticity requires focus on controlled movements and stability</li>
+                        <li><strong>Lower Body Strength:</strong> Naturally stronger legs relative to upper body; excellent for hip-dominant exercises</li>
+                        <li><strong>Pelvic Floor:</strong> Awareness during high-impact and heavy lifting exercises</li>
+                    </ul>
+                </div>
+                
+                <div class="info-subsection">
+                    <h4>⚠️ Injury Prevention Focus Areas</h4>
+                    <ul class="info-list">
+                        <li><strong>ACL Protection:</strong> 4-6x higher injury risk; prioritize hamstring strength and landing mechanics</li>
+                        <li><strong>Knee Alignment:</strong> Prevent valgus collapse (knees caving in) during squatting patterns</li>
+                        <li><strong>Core Stability:</strong> Essential for spinal protection and pelvic floor health</li>
+                        <li><strong>Shoulder Stability:</strong> Rotator cuff strengthening to prevent impingement</li>
+                    </ul>
+                </div>
+                
+                <div class="info-subsection">
+                    <h4>💪 Training Advantages</h4>
+                    <ul class="info-list">
+                        <li><strong>Fatigue Resistance:</strong> Higher Type I muscle fiber proportion allows for greater training volume</li>
+                        <li><strong>Recovery:</strong> Often faster recovery between sets due to metabolic differences</li>
+                        <li><strong>Endurance:</strong> Superior muscular endurance capabilities</li>
+                        <li><strong>Lower Body Power:</strong> Excellent glute and leg development potential</li>
+                    </ul>
+                </div>
+                
+                <div class="info-subsection">
+                    <h4>🔬 Hormonal Considerations</h4>
+                    <ul class="info-list">
+                        <li><strong>Menstrual Cycle:</strong> Performance may fluctuate; listen to your body</li>
+                        <li><strong>Follicular Phase (Days 1-14):</strong> Often optimal for high-intensity training</li>
+                        <li><strong>Luteal Phase (Days 15-28):</strong> May benefit from moderate intensity and volume</li>
+                        <li><strong>Individual Variation:</strong> Effects differ greatly; track your own patterns</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <div class="info-section-header">
+                    <span class="info-icon">📖</span>
+                    <h3>Research-Based Resources</h3>
+                </div>
+                <div class="info-resources">
+                    <a href="https://www.who.int/news-room/fact-sheets/detail/physical-activity" target="_blank" class="resource-link">
+                        <div class="resource-icon">🌍</div>
+                        <div class="resource-content">
+                            <div class="resource-title">WHO - Physical Activity Guidelines</div>
+                            <div class="resource-desc">World Health Organization recommendations for physical activity</div>
+                        </div>
+                        <div class="resource-arrow">→</div>
+                    </a>
+                    
+                    <a href="https://www.acefitness.org/fitness-certifications/resource-center/" target="_blank" class="resource-link">
+                        <div class="resource-icon">🎯</div>
+                        <div class="resource-content">
+                            <div class="resource-title">ACE Fitness - Exercise Science</div>
+                            <div class="resource-desc">American Council on Exercise research and education</div>
+                        </div>
+                        <div class="resource-arrow">→</div>
+                    </a>
+                    
+                    <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4969346/" target="_blank" class="resource-link">
+                        <div class="resource-icon">🔬</div>
+                        <div class="resource-content">
+                            <div class="resource-title">NCBI - Sex Differences in Training</div>
+                            <div class="resource-desc">Peer-reviewed research on sex-based training adaptations</div>
+                        </div>
+                        <div class="resource-arrow">→</div>
+                    </a>
+                    
+                    <a href="https://journals.lww.com/nsca-jscr" target="_blank" class="resource-link">
+                        <div class="resource-icon">📊</div>
+                        <div class="resource-content">
+                            <div class="resource-title">NSCA - Strength & Conditioning Research</div>
+                            <div class="resource-desc">National Strength and Conditioning Association journal</div>
+                        </div>
+                        <div class="resource-arrow">→</div>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="info-disclaimer">
+                <strong>⚕️ Medical Disclaimer:</strong> This educational content is for informational purposes only and does not constitute medical advice. Always consult with a qualified healthcare provider or certified fitness professional before beginning any exercise program.
+            </div>
+        </div>
+    </div>
+
+    <!-- Workout Shorts Modal -->
+    <div class="workout-shorts-overlay" id="workoutShortsOverlay">
+        <div class="workout-shorts-modal">
+            <button class="shorts-close" id="shortsClose">&times;</button>
+            <h2>🎬 Workout Shorts</h2>
+            <p class="shorts-subtitle">Quick exercise demonstrations and form tips to maximize your training</p>
+            
+            <div class="shorts-grid">
+                <a href="https://www.youtube.com/results?search_query=proper+push+up+form" target="_blank" class="shorts-card">
+                    <div class="shorts-icon">💪</div>
+                    <div class="shorts-content">
+                        <h3>Push-Up Form</h3>
+                        <p>Master the perfect push-up technique</p>
+                    </div>
+                    <div class="shorts-arrow">▶</div>
+                </a>
+                
+                <a href="https://www.youtube.com/results?search_query=squat+form+tutorial" target="_blank" class="shorts-card">
+                    <div class="shorts-icon">🦵</div>
+                    <div class="shorts-content">
+                        <h3>Squat Technique</h3>
+                        <p>Learn proper squat mechanics</p>
+                    </div>
+                    <div class="shorts-arrow">▶</div>
+                </a>
+                
+                <a href="https://www.youtube.com/results?search_query=deadlift+form+guide" target="_blank" class="shorts-card">
+                    <div class="shorts-icon">🏋️</div>
+                    <div class="shorts-content">
+                        <h3>Deadlift Basics</h3>
+                        <p>Safe deadlift form and setup</p>
+                    </div>
+                    <div class="shorts-arrow">▶</div>
+                </a>
+                
+                <a href="https://www.youtube.com/results?search_query=pull+up+progression" target="_blank" class="shorts-card">
+                    <div class="shorts-icon">🎯</div>
+                    <div class="shorts-content">
+                        <h3>Pull-Up Progress</h3>
+                        <p>Step-by-step pull-up training</p>
+                    </div>
+                    <div class="shorts-arrow">▶</div>
+                </a>
+                
+                <a href="https://www.youtube.com/results?search_query=plank+variations" target="_blank" class="shorts-card">
+                    <div class="shorts-icon">🔥</div>
+                    <div class="shorts-content">
+                        <h3>Core Training</h3>
+                        <p>Effective plank variations</p>
+                    </div>
+                    <div class="shorts-arrow">▶</div>
+                </a>
+                
+                <a href="https://www.youtube.com/results?search_query=workout+warm+up+routine" target="_blank" class="shorts-card">
+                    <div class="shorts-icon">⚡</div>
+                    <div class="shorts-content">
+                        <h3>Warm-Up Routine</h3>
+                        <p>Essential pre-workout prep</p>
+                    </div>
+                    <div class="shorts-arrow">▶</div>
+                </a>
+                
+                <a href="https://www.youtube.com/results?search_query=shoulder+mobility+exercises" target="_blank" class="shorts-card">
+                    <div class="shorts-icon">🔄</div>
+                    <div class="shorts-content">
+                        <h3>Mobility Work</h3>
+                        <p>Improve flexibility and range</p>
+                    </div>
+                    <div class="shorts-arrow">▶</div>
+                </a>
+                
+                <a href="https://www.youtube.com/results?search_query=post+workout+stretching" target="_blank" class="shorts-card">
+                    <div class="shorts-icon">🧘</div>
+                    <div class="shorts-content">
+                        <h3>Cool Down</h3>
+                        <p>Post-workout stretching routine</p>
+                    </div>
+                    <div class="shorts-arrow">▶</div>
+                </a>
+            </div>
+            
+            <div class="shorts-note">
+                <strong>💡 Pro Tip:</strong> Watch these short videos to ensure proper form and prevent injuries. Quality over quantity always!
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
-</html>
+</html

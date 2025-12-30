@@ -352,7 +352,9 @@ body {
 .view-toggle-container {
     display: flex;
     justify-content: center;
+    gap: 16px;
     margin-bottom: 24px;
+    flex-wrap: wrap;
 }
 
 .view-toggle-btn {
@@ -386,7 +388,7 @@ body {
 .view-toggle-icon {
     font-size: 24px;
     line-height: 1;
-    animation: rotateIcon 0.6s ease;
+    /* Removed spinning animation */
 }
 
 @keyframes rotateIcon {
@@ -394,9 +396,8 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-.view-toggle-btn:hover .view-toggle-icon {
-    animation: rotateIcon 0.6s ease infinite;
-}
+    /* No animation on hover */
+
 
 /* ============================
    SVG CONTAINER
@@ -408,6 +409,45 @@ body {
     align-items: center;
     margin: 0 auto;
     max-width: 600px;
+    background: transparent;
+    padding: 30px;
+    border: 3px solid rgba(239, 68, 68, 0.3);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    background: rgba(15, 23, 42, 0.3);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 0 60px rgba(239, 68, 68, 0.05);
+}
+
+.body-svg {
+    width: 100%;
+    height: 600px;
+    max-height: 70vh;
+    filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.6));
+    background: transparent;
+}
+
+/* SVG Muscle Styles - Applied via JavaScript */
+.muscle {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    fill: #9C9C9C;
+}
+
+.muscle:hover {
+    fill: #ef4444;
+    filter: drop-shadow(0 0 8px #ef4444);
+}
+
+/* ============================
+   BODY DISPLAY
+   ============================ */
+
+.body-display {
+    position: relative;
+    width: 100%;
+    height: 100%;
     background: transparent;
     padding: 30px;
     border: 3px solid rgba(239, 68, 68, 0.3);
@@ -462,11 +502,18 @@ body {
     display: flex;
 }
 
+/* Disable pointer events when closing modal */
+.modal.closing,
+.modal.closing * {
+    pointer-events: none !important;
+}
+
 .modal-content {
     background: linear-gradient(135deg, #1e293b, #0f172a);
     border: 2px solid rgba(239, 68, 68, 0.3);
     border-radius: 20px;
     padding: 32px;
+    width: 100%;
     max-width: 800px;
     max-height: 85vh;
     overflow-y: auto;
@@ -641,11 +688,14 @@ body {
     z-index: 3000;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     padding: 20px;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 .mode-selection-overlay.active {
@@ -662,6 +712,9 @@ body {
     padding: 48px 40px;
     text-align: center;
     animation: modalSlideIn 0.5s ease;
+    margin: auto;
+    margin-top: 40px;
+    margin-bottom: 40px;
 }
 
 .mode-selection-modal h2 {
@@ -760,6 +813,805 @@ body {
 }
 
 /* ============================
+   EXERCISE TIMER (COUNTDOWN)
+   ============================ */
+
+.exercise-timer {
+    background: rgba(15, 23, 42, 0.6);
+    border: 2px solid rgba(239, 68, 68, 0.3);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 28px;
+    text-align: center;
+}
+
+.timer-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.timer-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.timer-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.timer-display {
+    font-size: 72px;
+    font-weight: 700;
+    color: #ef4444;
+    margin-bottom: 20px;
+    font-family: 'Rajdhani', sans-serif;
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.timer-presets {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.preset-btn {
+    padding: 8px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+.preset-btn.active {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #ef4444;
+}
+
+.timer-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.timer-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    border-radius: 10px;
+    color: white;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.timer-btn:hover {
+    background: linear-gradient(135deg, #b91c1c, #991b1b);
+    border-color: rgba(239, 68, 68, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.timer-btn:active {
+    transform: translateY(0);
+}
+
+.timer-btn.running {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-color: rgba(245, 158, 11, 0.4);
+}
+
+.timer-btn.running:hover {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    border-color: rgba(245, 158, 11, 0.6);
+}
+
+.timer-btn-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+/* Timer Running State */
+.timer-display.running {
+    color: #f59e0b;
+    animation: timerPulse 1s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* ============================
+   TOGGLE SWITCH (FOR QUOTES)
+   ============================ */
+
+.menu-toggle-item {
+    cursor: default !important;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(239, 68, 68, 0.2);
+    border: 2px solid rgba(239, 68, 68, 0.3);
+    border-radius: 28px;
+    transition: all 0.3s ease;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 2px;
+    bottom: 2px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: rgba(239, 68, 68, 0.4);
+    border-color: rgba(239, 68, 68, 0.6);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.toggle-slider:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+/* ============================
+   WARM-UP WARNING TOAST
+   ============================ */
+
+.warmup-toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-120px);
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: 2px solid rgba(245, 158, 11, 0.5);
+    border-radius: 14px;
+    padding: 16px 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 4000;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 500px;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    pointer-events: none;
+}
+
+.warmup-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.warmup-toast-icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.warmup-toast-content {
+    flex: 1;
+}
+
+.warmup-toast-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 4px;
+}
+
+.warmup-toast-message {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.95);
+    line-height: 1.4;
+}
+
+.warmup-toast-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 24px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-weight: 300;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.warmup-toast-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+/* ============================
+   MOTIVATIONAL QUOTES
+   ============================ */
+
+.motivational-quote {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 600px;
+    padding: 24px 32px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+    z-index: 500;
+}
+
+.motivational-quote.visible {
+    opacity: 1;
+}
+
+.quote-text {
+    font-size: 20px;
+    font-weight: 600;
+    color: white;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    font-style: italic;
+}
+
+.quote-text:before {
+    content: '"';
+    color: #ef4444;
+    font-size: 28px;
+    margin-right: 4px;
+}
+
+.quote-text:after {
+    content: '"';
+    color: #ef4444;
+    font-size: 28px;
+    margin-left: 4px;
+}
+
+.quote-author {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.quote-author:before {
+    content: '— ';
+    color: #ef4444;
+}
+
+/* ============================
+   TRAINING INFO / RESEARCH MODAL
+   ============================ */
+
+.training-info-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(8px);
+    z-index: 3000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    overflow-y: auto;
+}
+
+.training-info-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Disable pointer events when closing */
+.training-info-overlay.closing,
+.training-info-overlay.closing * {
+    pointer-events: none !important;
+}
+
+.training-info-modal {
+    max-width: 900px;
+    width: 100%;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 2px solid rgba(239, 68, 68, 0.3);
+    border-radius: 24px;
+    padding: 48px 40px;
+    position: relative;
+    margin: 20px auto;
+    animation: modalSlideIn 0.5s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.info-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(239, 68, 68, 0.2);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+    font-size: 32px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 300;
+    line-height: 1;
+    z-index: 10;
+}
+
+.info-close:hover {
+    background: rgba(239, 68, 68, 0.3);
+    transform: rotate(90deg);
+}
+
+.training-info-modal h2 {
+    font-size: 38px;
+    font-weight: 700;
+    color: #ef4444;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.info-subtitle {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 36px;
+    text-align: center;
+}
+
+.info-section {
+    background: rgba(15, 23, 42, 0.5);
+    border: 2px solid rgba(239, 68, 68, 0.2);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 24px;
+}
+
+.info-section.female-specific {
+    border-color: rgba(168, 85, 247, 0.4);
+    background: rgba(88, 28, 135, 0.1);
+}
+
+.info-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.info-icon {
+    font-size: 32px;
+    line-height: 1;
+}
+
+.info-section h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ef4444;
+    margin: 0;
+}
+
+.info-section.female-specific h3 {
+    color: #a855f7;
+}
+
+.info-section > p {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.info-subsection {
+    background: rgba(0, 0, 0, 0.3);
+    border-left: 3px solid rgba(168, 85, 247, 0.5);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.info-subsection:last-child {
+    margin-bottom: 0;
+}
+
+.info-subsection h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #a855f7;
+    margin-bottom: 12px;
+}
+
+.info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.info-list li {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.7;
+    margin-bottom: 10px;
+    padding-left: 24px;
+    position: relative;
+}
+
+.info-list li:before {
+    content: "•";
+    position: absolute;
+    left: 8px;
+    color: #ef4444;
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.info-section.female-specific .info-list li:before {
+    color: #a855f7;
+}
+
+.info-list li strong {
+    color: white;
+    font-weight: 600;
+}
+
+.info-resources {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.resource-link {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: rgba(239, 68, 68, 0.05);
+    border: 2px solid rgba(239, 68, 68, 0.2);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.resource-link:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: translateX(8px);
+}
+
+.resource-icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.resource-content {
+    flex: 1;
+}
+
+.resource-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 4px;
+}
+
+.resource-desc {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
+}
+
+.resource-arrow {
+    font-size: 24px;
+    color: #ef4444;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.resource-link:hover .resource-arrow {
+    transform: translateX(4px);
+}
+
+.info-disclaimer {
+    background: rgba(245, 158, 11, 0.1);
+    border: 2px solid rgba(245, 158, 11, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.6;
+    margin-top: 24px;
+}
+
+.info-disclaimer strong {
+    color: #f59e0b;
+    font-weight: 700;
+}
+
+/* Scrollbar for info modal */
+.training-info-modal::-webkit-scrollbar {
+    width: 8px;
+}
+
+.training-info-modal::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.training-info-modal::-webkit-scrollbar-thumb {
+    background: rgba(239, 68, 68, 0.5);
+    border-radius: 4px;
+}
+
+.training-info-modal::-webkit-scrollbar-thumb:hover {
+    background: rgba(239, 68, 68, 0.7);
+}
+
+/* ============================
+   WORKOUT SHORTS MODAL
+   ============================ */
+
+.workout-shorts-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(8px);
+    z-index: 3000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    overflow-y: auto;
+}
+
+.workout-shorts-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Disable pointer events when closing */
+.workout-shorts-overlay.closing,
+.workout-shorts-overlay.closing * {
+    pointer-events: none !important;
+}
+
+.workout-shorts-modal {
+    max-width: 900px;
+    width: 100%;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 2px solid rgba(239, 68, 68, 0.3);
+    border-radius: 24px;
+    padding: 48px 40px;
+    position: relative;
+    margin: 20px auto;
+    animation: modalSlideIn 0.5s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.shorts-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(239, 68, 68, 0.2);
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+    font-size: 32px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 300;
+    line-height: 1;
+    z-index: 10;
+}
+
+.shorts-close:hover {
+    background: rgba(239, 68, 68, 0.3);
+    transform: rotate(90deg);
+}
+
+.workout-shorts-modal h2 {
+    font-size: 38px;
+    font-weight: 700;
+    color: #ef4444;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.shorts-subtitle {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 36px;
+    text-align: center;
+}
+
+.shorts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.shorts-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: rgba(239, 68, 68, 0.05);
+    border: 2px solid rgba(239, 68, 68, 0.2);
+    border-radius: 14px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.shorts-card:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.2);
+}
+
+.shorts-icon {
+    font-size: 36px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.shorts-content {
+    flex: 1;
+}
+
+.shorts-content h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 4px;
+}
+
+.shorts-content p {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.shorts-arrow {
+    font-size: 20px;
+    color: #ef4444;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.shorts-card:hover .shorts-arrow {
+    transform: translateX(4px);
+}
+
+.shorts-note {
+    background: rgba(245, 158, 11, 0.1);
+    border: 2px solid rgba(245, 158, 11, 0.3);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.6;
+    text-align: center;
+}
+
+.shorts-note strong {
+    color: #f59e0b;
+    font-weight: 700;
+}
+
+/* Scrollbar for shorts modal */
+.workout-shorts-modal::-webkit-scrollbar {
+    width: 8px;
+}
+
+.workout-shorts-modal::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.workout-shorts-modal::-webkit-scrollbar-thumb {
+    background: rgba(239, 68, 68, 0.5);
+    border-radius: 4px;
+}
+
+.workout-shorts-modal::-webkit-scrollbar-thumb:hover {
+    background: rgba(239, 68, 68, 0.7);
+}
+
+/* ============================
    CALORIE CALCULATOR OVERLAY
    ============================ */
 
@@ -785,6 +1637,12 @@ body {
 .calorie-calculator-overlay.active {
     opacity: 1;
     pointer-events: all;
+}
+
+/* Disable pointer events when closing */
+.calorie-calculator-overlay.closing,
+.calorie-calculator-overlay.closing * {
+    pointer-events: none !important;
 }
 
 .calorie-calculator-modal {
@@ -1104,6 +1962,29 @@ body {
     .calorie-calculator-modal h2 {
         font-size: 28px;
     }
+    
+    .timer-display {
+        font-size: 56px;
+    }
+    
+    .timer-presets {
+        flex-wrap: wrap;
+    }
+    
+    .warmup-toast {
+        max-width: 90%;
+        left: 50%;
+    }
+    
+    .motivational-quote {
+        max-width: 90%;
+        bottom: 80px;
+        padding: 20px 24px;
+    }
+    
+    .quote-text {
+        font-size: 18px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1133,5 +2014,39 @@ body {
     
     .macro-grams {
         font-size: 22px;
+    }
+    
+    .timer-display {
+        font-size: 48px;
+    }
+    
+    .timer-controls {
+        flex-direction: column;
+    }
+    
+    .timer-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .quote-text {
+        font-size: 16px;
+    }
+    
+    .warmup-toast {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .shorts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .workout-shorts-modal {
+        padding: 32px 24px;
+    }
+    
+    .workout-shorts-modal h2 {
+        font-size: 32px;
     }
 }
