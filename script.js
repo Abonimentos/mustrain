@@ -1426,42 +1426,6 @@ trainingInfoOverlay.addEventListener('click', (e) => {
     }
 });
 
-// ============================
-// WORKOUT SHORTS
-// ============================
-
-const workoutShortsMenuItem = document.getElementById('workoutShortsMenuItem');
-const workoutShortsOverlay = document.getElementById('workoutShortsOverlay');
-const shortsClose = document.getElementById('shortsClose');
-
-// Open workout shorts modal
-workoutShortsMenuItem.addEventListener('click', () => {
-    workoutShortsOverlay.classList.add('active');
-    // Close side menu
-    sideMenu.classList.remove('active');
-    menuToggle.classList.remove('active');
-});
-
-// Close workout shorts modal
-shortsClose.addEventListener('click', () => {
-    workoutShortsOverlay.classList.add('closing'); // Disable all pointer events immediately
-    workoutShortsOverlay.classList.remove('active');
-    setTimeout(() => {
-        workoutShortsOverlay.classList.remove('closing');
-    }, 300);
-});
-
-// Close when clicking outside
-workoutShortsOverlay.addEventListener('click', (e) => {
-    if (e.target === workoutShortsOverlay) {
-        workoutShortsOverlay.classList.add('closing'); // Disable all pointer events immediately
-        workoutShortsOverlay.classList.remove('active');
-        setTimeout(() => {
-            workoutShortsOverlay.classList.remove('closing');
-        }, 300);
-    }
-});
-
 // Female-specific exercise modifications
 // This adds additional context and safety notes to exercises when female perspective is enabled
 const femaleExerciseModifications = {
@@ -1539,14 +1503,14 @@ function setupSVGInteractions() {
     const backShorts = svgDoc.getElementById('image0_5_4');
     if (frontShorts) {
         frontShorts.style.pointerEvents = 'none';
-        frontShorts.setAttribute('pointer-events', 'none'); // Set as SVG attribute too
+        frontShorts.setAttribute('pointer-events', 'none');
         frontShorts.style.visibility = shortsVisible ? 'visible' : 'hidden';
         frontShorts.style.opacity = shortsVisible ? '1' : '0';
         if (!shortsVisible) frontShorts.setAttribute('display', 'none');
     }
     if (backShorts) {
         backShorts.style.pointerEvents = 'none';
-        backShorts.setAttribute('pointer-events', 'none'); // Set as SVG attribute too
+        backShorts.setAttribute('pointer-events', 'none');
         backShorts.style.visibility = shortsVisible ? 'visible' : 'hidden';
         backShorts.style.opacity = shortsVisible ? '1' : '0';
         if (!shortsVisible) backShorts.setAttribute('display', 'none');
@@ -1561,7 +1525,6 @@ function setupSVGInteractions() {
         const rects = svgDoc.querySelectorAll('rect');
         rects.forEach(rect => {
             const fill = rect.getAttribute('fill') || rect.style.fill;
-            // If it's a white or light colored rectangle, make it transparent
             if (fill === '#FFFFFF' || fill === '#FFF' || fill === 'white' || 
                 fill === '#ffffff' || fill === '#fff' || !fill) {
                 rect.style.fill = 'transparent';
@@ -1575,7 +1538,6 @@ function setupSVGInteractions() {
             const fill = element.getAttribute('fill');
             if (fill === '#FFFFFF' || fill === '#FFF' || fill === 'white' || 
                 fill === '#ffffff' || fill === '#fff') {
-                // Check if it's NOT one of our muscle elements
                 const mapping = currentView === 'front' ? muscleMapping : backMuscleMapping;
                 if (!element.id || !mapping[element.id]) {
                     element.style.fill = 'transparent';
@@ -1588,7 +1550,7 @@ function setupSVGInteractions() {
     // Select the appropriate muscle mapping based on current view
     const mapping = currentView === 'front' ? muscleMapping : backMuscleMapping;
     
-    // Get all muscle elements by their IDs
+    // Get all muscle elements by their IDs from the mapping
     Object.keys(mapping).forEach(muscleId => {
         const muscleElement = svgDoc.getElementById(muscleId);
         
@@ -1628,8 +1590,14 @@ function setupSVGInteractions() {
     const svgContainer = document.querySelector('.svg-container');
     if (svgContainer) {
         svgContainer.addEventListener('mouseleave', () => {
-            resetMuscleHighlighting();
-            muscleDisplay.classList.remove('visible');
+            // Only hide the display if no muscle is active
+            const svgDoc = bodySvg.contentDocument;
+            if (svgDoc) {
+                const activeMuscle = svgDoc.querySelector('.muscle.active');
+                if (!activeMuscle) {
+                    muscleDisplay.classList.remove('visible');
+                }
+            }
         });
     }
 }
@@ -1731,6 +1699,10 @@ function showExercises(muscleName) {
                 <span>${exercise.reps}</span>
             </div>
             <p>${exercise.description}</p>
+            <a href="https://youtube.com/playlist?list=PLp4G6oBUcv8yGQifkb4p_ZOoACPnYslx9&si=XkXgfkzZ7ljltxG9" target="_blank" class="exercise-video-link">
+                <span class="video-icon">▶️</span>
+                <span>Watch proper form</span>
+            </a>
         `;
         
         exercisesGrid.appendChild(card);
@@ -1752,7 +1724,7 @@ function resetMuscleHighlighting() {
     const muscles = svgDoc.querySelectorAll('[id*="Biceps"], [id*="Triceps"], [id*="Chest"], [id*="Shoulder"], [id*="Forearm"], [id*="Abs"], [id*="Obliques"], [id*="Quadriceps"], [id*="Hamstrings"], [id*="Calves"], [id*="Glutes"], [id*="Upper_Back"], [id*="Lower_Back"], [id*="Head"], [id*="Traps"], [id*="Lats"]');
     
     muscles.forEach(muscle => {
-        muscle.style.fill = '#9C9C9C';
+        muscle.style.fill = '#94A3B8';
         muscle.style.filter = '';
     });
 }
