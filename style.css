@@ -396,9 +396,6 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-    /* No animation on hover */
-
-
 /* ============================
    SVG CONTAINER
    ============================ */
@@ -435,9 +432,23 @@ body {
     fill: #9C9C9C;
 }
 
+/* Hover effect - subtle preview only */
 .muscle:hover {
-    fill: #ef4444;
-    filter: drop-shadow(0 0 8px #ef4444);
+    fill: #dc2626;
+    filter: drop-shadow(0 0 6px rgba(220, 38, 38, 0.6));
+}
+
+/* Active state - persists when clicked until modal closes */
+.muscle.active {
+    fill: #ef4444 !important;
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.8)) !important;
+    opacity: 1 !important;
+}
+
+/* Ensure active state overrides hover */
+.muscle.active:hover {
+    fill: #ef4444 !important;
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.8)) !important;
 }
 
 /* ============================
@@ -474,9 +485,23 @@ body {
     fill: #9C9C9C;
 }
 
+/* Hover effect - subtle preview only */
 .muscle:hover {
-    fill: #ef4444;
-    filter: drop-shadow(0 0 8px #ef4444);
+    fill: #dc2626;
+    filter: drop-shadow(0 0 6px rgba(220, 38, 38, 0.6));
+}
+
+/* Active state - persists when clicked until modal closes */
+.muscle.active {
+    fill: #ef4444 !important;
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.8)) !important;
+    opacity: 1 !important;
+}
+
+/* Ensure active state overrides hover */
+.muscle.active:hover {
+    fill: #ef4444 !important;
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.8)) !important;
 }
 
 /* ============================
@@ -617,6 +642,36 @@ body {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.8);
     line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.exercise-video-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 8px;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.exercise-video-link:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: white;
+    transform: translateX(4px);
+}
+
+.video-icon {
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 /* Special styling for head exercises */
