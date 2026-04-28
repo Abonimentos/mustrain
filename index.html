@@ -129,6 +129,41 @@
         </div>
     </div>
 
+    <!-- AI Push-up Tracker (Beta) -->
+        <div class="tracker-section">
+            <div class="tracker-divider"></div>
+
+            <div class="tracker-container">
+                <h2 class="tracker-title">AI Push-up Tracker (Beta)</h2>
+                <p class="tracker-subtitle">Use your camera to track push-ups in real time. The system analyzes your movement and counts repetitions.</p>
+
+                <div class="tracker-content">
+                   <div class="camera-preview">
+                    <video id="pushupVideo" autoplay playsinline muted></video>
+                        <canvas id="pushupCanvas"></canvas>
+                          <div class="live-tracking-badge">Live Tracking</div>
+                    </div>
+
+                    <div class="tracker-stats">
+                        <div class="reps-counter">
+                            <div class="reps-label">Reps:</div>
+                            <div class="reps-value" id="repsCount">0</div>
+                        </div>
+
+                        <div class="tracker-status" id="trackerStatus">Ready</div>
+                    </div>
+
+                    <button class="tracker-btn" id="startCameraBtn">
+                        <span class="btn-icon">📷</span>
+                        <span>Start Camera</span>
+                    </button>
+
+                    <p class="tracker-note">Works best with good lighting and clear body visibility</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Exercise Modal -->
     <div class="modal" id="exerciseModal">
         <div class="modal-content">
@@ -448,6 +483,9 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
