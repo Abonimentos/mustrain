@@ -1751,11 +1751,10 @@ exerciseModal.addEventListener('click', (e) => {
     }
 });
 
-// Close modal with Escape key
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (exerciseModal.classList.contains('active')) {
-            exerciseModal.classList.add('closing'); // Disable all pointer events immediately
+            exerciseModal.classList.add('closing'); 
             exerciseModal.classList.remove('active');
             resetMuscleHighlighting();
             setTimeout(() => {
@@ -1765,9 +1764,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// ============================
-// CONSOLE MESSAGE
-// ============================
 
 console.log('🏋️ Muscle Training Atlas Loaded!');
 console.log('💪 Click any muscle to see exercises');
@@ -1778,3 +1774,209 @@ console.log('🔄 Total exercises:',
     Object.keys(exerciseDatabase.street).length + 
     Object.keys(exerciseDatabase.gym).length
 );
+
+// ========================================
+// AI PUSH-UP TRACKER (BETA)
+// ========================================
+
+const startCameraBtn = document.getElementById('startCameraBtn');
+const repsCount = document.getElementById('repsCount');
+const trackerStatus = document.getElementById('trackerStatus');
+const pushupVideo = document.getElementById('pushupVideo');
+const pushupCanvas = document.getElementById('pushupCanvas');
+
+let isTracking = false;
+let currentReps = 0;
+let pushupStage = "up";
+let camera = null;
+let pose = null;
+
+function calculateAngle(a, b, c) {
+    const ab = {
+        x: a.x - b.x,
+        y: a.y - b.y
+    };
+
+    const cb = {
+        x: c.x - b.x,
+        y: c.y - b.y
+    };
+
+    const dot = ab.x * cb.x + ab.y * cb.y;
+    const magAB = Math.sqrt(ab.x * ab.x + ab.y * ab.y);
+    const magCB = Math.sqrt(cb.x * cb.x + cb.y * cb.y);
+
+    let cosine = dot / (magAB * magCB);
+    cosine = Math.max(-1, Math.min(1, cosine));
+
+    const angle = Math.acos(cosine);
+    return angle * (180 / Math.PI);
+}
+
+function onPoseResults(results) {
+    const canvasCtx = pushupCanvas.getContext('2d');
+
+    pushupCanvas.width = pushupVideo.videoWidth || 640;
+    pushupCanvas.height = pushupVideo.videoHeight || 480;
+
+    canvasCtx.save();
+    canvasCtx.clearRect(0, 0, pushupCanvas.width, pushupCanvas.height);
+    canvasCtx.drawImage(results.image, 0, 0, pushupCanvas.width, pushupCanvas.height);
+
+    if (results.poseLandmarks) {
+        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {
+            color: '#ef4444',
+            lineWidth: 3
+        });
+
+        drawLandmarks(canvasCtx, results.poseLandmarks, {
+            color: '#ffffff',
+            lineWidth: 2,
+            radius: 3
+        });
+
+        const landmarks = results.poseLandmarks;
+
+        // Right arm landmarks
+                const right = {
+        shoulder: landmarks[12],
+        elbow: landmarks[14],
+        wrist: landmarks[16]
+        };
+
+        const left = {
+        shoulder: landmarks[11],
+        elbow: landmarks[13],
+        wrist: landmarks[15]
+        };
+
+        function avgVisibility(arm) {
+        return (arm.shoulder.visibility + arm.elbow.visibility + arm.wrist.visibility) / 3;
+        }
+
+        const arm = avgVisibility(left) > avgVisibility(right) ? left : right;
+
+        const visibilityGood =
+        arm.shoulder.visibility > 0.35 &&
+        arm.elbow.visibility > 0.35 &&
+        arm.wrist.visibility > 0.35;
+
+        if (!visibilityGood) {
+        trackerStatus.textContent = "Show your upper body from the side";
+        canvasCtx.restore();
+        return;
+        }
+
+const elbowAngle = calculateAngle(arm.shoulder, arm.elbow, arm.wrist);
+
+// Extra rule: body must be visible, not only the arm
+const bodyVisible =
+  landmarks[11].visibility > 0.35 &&
+  landmarks[12].visibility > 0.35 &&
+  landmarks[23].visibility > 0.25 &&
+  landmarks[24].visibility > 0.25;
+
+if (!bodyVisible) {
+  trackerStatus.textContent = "Show full upper body";
+  canvasCtx.restore();
+  return;
+}
+
+const now = Date.now();
+
+if (!window.lastRepTime) window.lastRepTime = 0;
+if (!window.downConfirmed) window.downConfirmed = false;
+
+// User must clearly go down first
+if (elbowAngle < 95 && pushupStage === "up") {
+  pushupStage = "down";
+  window.downConfirmed = true;
+  trackerStatus.textContent = "Down position";
+}
+
+// Count only after confirmed down + enough time passed
+if (
+  elbowAngle > 150 &&
+  pushupStage === "down" &&
+  window.downConfirmed &&
+  now - window.lastRepTime > 1200
+) {
+  currentReps++;
+  repsCount.textContent = currentReps;
+  trackerStatus.textContent = "Good rep!";
+  pushupStage = "up";
+  window.downConfirmed = false;
+  window.lastRepTime = now;
+}
+    } else {
+        trackerStatus.textContent = "No body detected";
+    }
+
+    canvasCtx.restore();
+}
+
+async function startPushupTracker() {
+    pose = new Pose({
+        locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+        }
+    });
+
+    pose.setOptions({
+        modelComplexity: 0,
+        smoothLandmarks: true,
+        enableSegmentation: false,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+
+    pose.onResults(onPoseResults);
+
+    camera = new Camera(pushupVideo, {
+        onFrame: async () => {
+            await pose.send({ image: pushupVideo });
+        },
+        width: 640,
+        height: 480
+    });
+
+    await camera.start();
+
+    isTracking = true;
+    trackerStatus.textContent = "Tracking started";
+    startCameraBtn.innerHTML = '<span class="btn-icon">⏸️</span><span>Stop Camera</span>';
+}
+
+function stopPushupTracker() {
+    if (camera) {
+        camera.stop();
+        camera = null;
+    }
+
+    if (pushupVideo.srcObject) {
+        pushupVideo.srcObject.getTracks().forEach(track => track.stop());
+        pushupVideo.srcObject = null;
+    }
+
+    isTracking = false;
+    pushupStage = "up";
+    currentReps = 0;
+    repsCount.textContent = "0";
+    trackerStatus.textContent = "Stopped";
+    startCameraBtn.innerHTML = '<span class="btn-icon">📷</span><span>Start Camera</span>';
+}
+
+if (startCameraBtn && repsCount && trackerStatus && pushupVideo && pushupCanvas) {
+    startCameraBtn.addEventListener('click', async () => {
+        if (!isTracking) {
+            try {
+                await startPushupTracker();
+            } catch (error) {
+                console.error("Pose tracker error:", error);
+                trackerStatus.textContent = "Camera or tracking error";
+            }
+        } else {
+            stopPushupTracker();
+        }
+    });
+}
