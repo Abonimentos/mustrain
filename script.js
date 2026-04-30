@@ -720,7 +720,6 @@ const exerciseDatabase = {
         ]
     }
 };
-
 // ============================
 // MUSCLE ID MAPPING
 // ============================
@@ -1776,7 +1775,7 @@ console.log('🔄 Total exercises:',
 );
 
 // ========================================
-// AI PUSH-UP TRACKER (BETA)
+// AI PUSH-UP TRACKER (FINAL)
 // ========================================
 
 const startCameraBtn = document.getElementById('startCameraBtn');
@@ -1791,141 +1790,139 @@ let pushupStage = "up";
 let camera = null;
 let pose = null;
 
-function calculateAngle(a, b, c) {
-    const ab = {
-        x: a.x - b.x,
-        y: a.y - b.y
-    };
+// extra logic
+let lastRepTime = 0;
+let downConfirmed = false;
+let minAngle = 180;
 
-    const cb = {
-        x: c.x - b.x,
-        y: c.y - b.y
-    };
+// ================= ANGLE =================
+function calculateAngle(a, b, c) {
+    const ab = { x: a.x - b.x, y: a.y - b.y };
+    const cb = { x: c.x - b.x, y: c.y - b.y };
 
     const dot = ab.x * cb.x + ab.y * cb.y;
-    const magAB = Math.sqrt(ab.x * ab.x + ab.y * ab.y);
-    const magCB = Math.sqrt(cb.x * cb.x + cb.y * cb.y);
+    const magAB = Math.sqrt(ab.x ** 2 + ab.y ** 2);
+    const magCB = Math.sqrt(cb.x ** 2 + cb.y ** 2);
 
     let cosine = dot / (magAB * magCB);
     cosine = Math.max(-1, Math.min(1, cosine));
 
-    const angle = Math.acos(cosine);
-    return angle * (180 / Math.PI);
+    return Math.acos(cosine) * (180 / Math.PI);
 }
 
+// ================= MAIN =================
 function onPoseResults(results) {
-    const canvasCtx = pushupCanvas.getContext('2d');
+    const ctx = pushupCanvas.getContext('2d');
 
     pushupCanvas.width = pushupVideo.videoWidth || 640;
     pushupCanvas.height = pushupVideo.videoHeight || 480;
 
-    canvasCtx.save();
-    canvasCtx.clearRect(0, 0, pushupCanvas.width, pushupCanvas.height);
-    canvasCtx.drawImage(results.image, 0, 0, pushupCanvas.width, pushupCanvas.height);
+    ctx.save();
+    ctx.clearRect(0, 0, pushupCanvas.width, pushupCanvas.height);
+    ctx.drawImage(results.image, 0, 0, pushupCanvas.width, pushupCanvas.height);
 
-    if (results.poseLandmarks) {
-        drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {
-            color: '#ef4444',
-            lineWidth: 3
-        });
+    if (!results.poseLandmarks) {
+        trackerStatus.textContent = "No body detected";
+        ctx.restore();
+        return;
+    }
 
-        drawLandmarks(canvasCtx, results.poseLandmarks, {
-            color: '#ffffff',
-            lineWidth: 2,
-            radius: 3
-        });
+    const lm = results.poseLandmarks;
 
-        const landmarks = results.poseLandmarks;
+    drawConnectors(ctx, lm, POSE_CONNECTIONS, { color: '#ef4444', lineWidth: 3 });
+    drawLandmarks(ctx, lm, { color: '#fff', radius: 3 });
 
-        // Right arm landmarks
-                const right = {
-        shoulder: landmarks[12],
-        elbow: landmarks[14],
-        wrist: landmarks[16]
-        };
+    // choose best visible arm
+    const left = { shoulder: lm[11], elbow: lm[13], wrist: lm[15] };
+    const right = { shoulder: lm[12], elbow: lm[14], wrist: lm[16] };
 
-        const left = {
-        shoulder: landmarks[11],
-        elbow: landmarks[13],
-        wrist: landmarks[15]
-        };
+    const avg = arm =>
+        (arm.shoulder.visibility + arm.elbow.visibility + arm.wrist.visibility) / 3;
 
-        function avgVisibility(arm) {
-        return (arm.shoulder.visibility + arm.elbow.visibility + arm.wrist.visibility) / 3;
-        }
+    const arm = avg(left) > avg(right) ? left : right;
 
-        const arm = avgVisibility(left) > avgVisibility(right) ? left : right;
-
-        const visibilityGood =
+    // visibility checks
+    const armVisible =
         arm.shoulder.visibility > 0.35 &&
         arm.elbow.visibility > 0.35 &&
         arm.wrist.visibility > 0.35;
 
-        if (!visibilityGood) {
-        trackerStatus.textContent = "Show your upper body from the side";
-        canvasCtx.restore();
+    const bodyVisible =
+        lm[11].visibility > 0.35 &&
+        lm[12].visibility > 0.35 &&
+        lm[23].visibility > 0.25 &&
+        lm[24].visibility > 0.25;
+
+    if (!armVisible || !bodyVisible) {
+        trackerStatus.textContent = "Show full upper body (side view)";
+        ctx.restore();
         return;
-        }
-
-const elbowAngle = calculateAngle(arm.shoulder, arm.elbow, arm.wrist);
-
-// Extra rule: body must be visible, not only the arm
-const bodyVisible =
-  landmarks[11].visibility > 0.35 &&
-  landmarks[12].visibility > 0.35 &&
-  landmarks[23].visibility > 0.25 &&
-  landmarks[24].visibility > 0.25;
-
-if (!bodyVisible) {
-  trackerStatus.textContent = "Show full upper body";
-  canvasCtx.restore();
-  return;
-}
-
-const now = Date.now();
-
-if (!window.lastRepTime) window.lastRepTime = 0;
-if (!window.downConfirmed) window.downConfirmed = false;
-
-// User must clearly go down first
-if (elbowAngle < 95 && pushupStage === "up") {
-  pushupStage = "down";
-  window.downConfirmed = true;
-  trackerStatus.textContent = "Down position";
-}
-
-// Count only after confirmed down + enough time passed
-if (
-  elbowAngle > 150 &&
-  pushupStage === "down" &&
-  window.downConfirmed &&
-  now - window.lastRepTime > 1200
-) {
-  currentReps++;
-  repsCount.textContent = currentReps;
-  trackerStatus.textContent = "Good rep!";
-  pushupStage = "up";
-  window.downConfirmed = false;
-  window.lastRepTime = now;
-}
-    } else {
-        trackerStatus.textContent = "No body detected";
     }
 
-    canvasCtx.restore();
+    const angle = calculateAngle(arm.shoulder, arm.elbow, arm.wrist);
+    const now = Date.now();
+
+    // track minimum angle (depth)
+    if (angle < minAngle) {
+        minAngle = angle;
+    }
+
+    // ================= DOWN =================
+    if (angle < 95 && pushupStage === "up") {
+        pushupStage = "down";
+        downConfirmed = true;
+        trackerStatus.textContent = "Down position";
+    }
+
+    // ================= UP + COUNT =================
+    if (
+        angle > 150 &&
+        pushupStage === "down" &&
+        downConfirmed &&
+        now - lastRepTime > 1200
+    ) {
+        let feedback = "Good rep";
+
+        // depth check
+        if (minAngle > 110) {
+            feedback = "Go lower";
+            minAngle = 180;
+            pushupStage = "up";
+            downConfirmed = false;
+            trackerStatus.textContent = feedback;
+            return;
+        }
+
+        // speed check
+        const repTime = now - lastRepTime;
+        if (repTime < 800) {
+            feedback = "Too fast";
+        }
+
+        currentReps++;
+        repsCount.textContent = currentReps;
+
+        trackerStatus.textContent = feedback;
+
+        pushupStage = "up";
+        downConfirmed = false;
+        lastRepTime = now;
+        minAngle = 180;
+    }
+
+    ctx.restore();
 }
 
+// ================= START =================
 async function startPushupTracker() {
     pose = new Pose({
-        locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
-        }
+        locateFile: file =>
+            `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
     });
 
     pose.setOptions({
         modelComplexity: 0,
         smoothLandmarks: true,
-        enableSegmentation: false,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5
     });
@@ -1944,18 +1941,16 @@ async function startPushupTracker() {
 
     isTracking = true;
     trackerStatus.textContent = "Tracking started";
-    startCameraBtn.innerHTML = '<span class="btn-icon">⏸️</span><span>Stop Camera</span>';
+    startCameraBtn.innerHTML =
+        '<span class="btn-icon">⏸️</span><span>Stop Camera</span>';
 }
 
+// ================= STOP =================
 function stopPushupTracker() {
-    if (camera) {
-        camera.stop();
-        camera = null;
-    }
+    if (camera) camera.stop();
 
     if (pushupVideo.srcObject) {
         pushupVideo.srcObject.getTracks().forEach(track => track.stop());
-        pushupVideo.srcObject = null;
     }
 
     isTracking = false;
@@ -1963,20 +1958,21 @@ function stopPushupTracker() {
     currentReps = 0;
     repsCount.textContent = "0";
     trackerStatus.textContent = "Stopped";
-    startCameraBtn.innerHTML = '<span class="btn-icon">📷</span><span>Start Camera</span>';
+
+    startCameraBtn.innerHTML =
+        '<span class="btn-icon">📷</span><span>Start Camera</span>';
 }
 
-if (startCameraBtn && repsCount && trackerStatus && pushupVideo && pushupCanvas) {
-    startCameraBtn.addEventListener('click', async () => {
-        if (!isTracking) {
-            try {
-                await startPushupTracker();
-            } catch (error) {
-                console.error("Pose tracker error:", error);
-                trackerStatus.textContent = "Camera or tracking error";
-            }
-        } else {
-            stopPushupTracker();
+// ================= BUTTON =================
+startCameraBtn.addEventListener('click', async () => {
+    if (!isTracking) {
+        try {
+            await startPushupTracker();
+        } catch (e) {
+            console.error(e);
+            trackerStatus.textContent = "Camera error";
         }
-    });
-}
+    } else {
+        stopPushupTracker();
+    }
+});
