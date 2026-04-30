@@ -145,13 +145,29 @@
                     </div>
 
                     <div class="tracker-stats">
-                        <div class="reps-counter">
-                            <div class="reps-label">Reps:</div>
-                            <div class="reps-value" id="repsCount">0</div>
-                        </div>
 
-                        <div class="tracker-status" id="trackerStatus">Ready</div>
-                    </div>
+    <div class="reps-counter">
+        <div class="reps-label">Reps:</div>
+        <div class="reps-value" id="repsCount">0</div>
+    </div>
+
+    <div class="timer">
+        <div class="reps-label">Time:</div>
+        <div class="reps-value" id="timerValue">00:00</div>
+    </div>
+
+    <div class="challenge">
+        <div class="reps-label">Challenge:</div>
+        <select id="challengeSelect">
+            <option value="20">20 reps / 1 min</option>
+            <option value="50">50 reps / 1 min</option>
+            <option value="70">70 reps / 1 min</option>
+        </select>
+    </div>
+
+    <div class="tracker-status" id="trackerStatus">Ready</div>
+
+</div>
 
                     <button class="tracker-btn" id="startCameraBtn">
                         <span class="btn-icon">📷</span>
