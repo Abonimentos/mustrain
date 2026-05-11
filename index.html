@@ -129,12 +129,12 @@
         </div>
     </div>
 
-    <!-- AI Push-up Tracker (Beta) -->
+    <!-- AI Push-up Tracker -->
         <div class="tracker-section">
             <div class="tracker-divider"></div>
 
             <div class="tracker-container">
-                <h2 class="tracker-title">AI Push-up Tracker (Beta)</h2>
+                <h2 class="tracker-title">AI Push-up Tracker</h2>
                 <p class="tracker-subtitle">Use your camera to track push-ups in real time. The system analyzes your movement and counts repetitions.</p>
 
                 <div class="tracker-content">
@@ -146,33 +146,40 @@
 
                     <div class="tracker-stats">
 
-    <div class="reps-counter">
-        <div class="reps-label">Reps:</div>
-        <div class="reps-value" id="repsCount">0</div>
-    </div>
+                        <div class="tracker-metrics">
+                            <div class="tracker-metric">
+                                <div class="reps-label">Reps</div>
+                                <div class="reps-value" id="repsCount">0</div>
+                            </div>
 
-    <div class="timer">
-        <div class="reps-label">Time:</div>
-        <div class="reps-value" id="timerValue">00:00</div>
-    </div>
+                            <div class="tracker-metric">
+                                <div class="reps-label">Time</div>
+                                <div class="reps-value" id="timerValue">01:00</div>
+                            </div>
+                        </div>
 
-    <div class="challenge">
-        <div class="reps-label">Challenge:</div>
-        <select id="challengeSelect">
-            <option value="20">20 reps / 1 min</option>
-            <option value="50">50 reps / 1 min</option>
-            <option value="70">70 reps / 1 min</option>
-        </select>
-    </div>
+                        <div class="tracker-status" id="trackerStatus">Ready</div>
 
-    <div class="tracker-status" id="trackerStatus">Ready</div>
+                        <div class="tracker-actions">
+                            <button class="tracker-btn" id="startCameraBtn">
+                                <span class="btn-icon">📷</span>
+                                <span>Start Camera</span>
+                            </button>
+
+                            <button class="tracker-btn tracker-btn-secondary" id="challengeBtn">
+                                <span class="btn-icon">⏱</span>
+                                <span>1 Minute Challenge</span>
+                            </button>
+                        </div>
+
+                        <div class="leaderboard">
+                            <div class="leaderboard-title">Global Leaderboard</div>
+                            <ol class="leaderboard-list" id="leaderboardList">
+                                <li>No scores yet</li>
+                            </ol>
+                        </div>
 
 </div>
-
-                    <button class="tracker-btn" id="startCameraBtn">
-                        <span class="btn-icon">📷</span>
-                        <span>Start Camera</span>
-                    </button>
 
                     <p class="tracker-note">Works best with good lighting and clear body visibility</p>
                 </div>
@@ -502,6 +509,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
+
