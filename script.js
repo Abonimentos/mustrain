@@ -1775,42 +1775,263 @@ console.log('🔄 Total exercises:',
 );
 
 // ========================================
-// AI PUSH-UP TRACKER (FINAL)
+// AI PUSH-UP TRACKER
 // ========================================
 
 const startCameraBtn = document.getElementById('startCameraBtn');
+const challengeBtn = document.getElementById('challengeBtn');
 const repsCount = document.getElementById('repsCount');
+const timerValue = document.getElementById('timerValue');
 const trackerStatus = document.getElementById('trackerStatus');
 const pushupVideo = document.getElementById('pushupVideo');
 const pushupCanvas = document.getElementById('pushupCanvas');
+const leaderboardList = document.getElementById('leaderboardList');
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBpGZjvXJ8Gm-ZNHDcvsX4SvfgNW09EJJY",
+  authDomain: "mustrain.firebaseapp.com",
+  projectId: "mustrain",
+  storageBucket: "mustrain.firebasestorage.app",
+  messagingSenderId: "712041126551",
+  appId: "1:712041126551:web:3a7d71a539b1da186067d2",
+  measurementId: "G-6VTMRL118P"
+};
+
+const FIREBASE_COLLECTION = 'pushupLeaderboard';
+const CHALLENGE_SECONDS = 60;
+const DOWN_ANGLE = 95;
+const UP_ANGLE = 155;
+const MIN_REP_MS = 450;
+const REP_COOLDOWN_MS = 650;
+const MIN_VISIBILITY = 0.45;
 
 let isTracking = false;
 let currentReps = 0;
-let pushupStage = "up";
+let pushupStage = 'up';
 let camera = null;
 let pose = null;
-
-// extra logic
+let downStartTime = 0;
 let lastRepTime = 0;
-let downConfirmed = false;
-let minAngle = 180;
+let lowestAngle = 180;
+let challengeActive = false;
+let challengeSecondsLeft = CHALLENGE_SECONDS;
+let challengeInterval = null;
+let leaderboardDb = null;
+let leaderboardUnsubscribe = null;
 
-// ================= ANGLE =================
 function calculateAngle(a, b, c) {
     const ab = { x: a.x - b.x, y: a.y - b.y };
     const cb = { x: c.x - b.x, y: c.y - b.y };
-
     const dot = ab.x * cb.x + ab.y * cb.y;
-    const magAB = Math.sqrt(ab.x ** 2 + ab.y ** 2);
-    const magCB = Math.sqrt(cb.x ** 2 + cb.y ** 2);
+    const magAB = Math.hypot(ab.x, ab.y);
+    const magCB = Math.hypot(cb.x, cb.y);
 
-    let cosine = dot / (magAB * magCB);
-    cosine = Math.max(-1, Math.min(1, cosine));
+    if (!magAB || !magCB) return 180;
 
+    const cosine = Math.max(-1, Math.min(1, dot / (magAB * magCB)));
     return Math.acos(cosine) * (180 / Math.PI);
 }
 
-// ================= MAIN =================
+function formatChallengeTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+}
+
+function escapeHtml(value) {
+    return value.replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[character]);
+}
+
+function resetRepState(resetCount = false) {
+    pushupStage = 'up';
+    downStartTime = 0;
+    lastRepTime = 0;
+    lowestAngle = 180;
+
+    if (resetCount) {
+        currentReps = 0;
+        repsCount.textContent = '0';
+    }
+}
+
+function setTrackerStatus(message) {
+    trackerStatus.textContent = message;
+}
+
+function isFirebaseConfigured() {
+    return firebaseConfig.apiKey &&
+        !firebaseConfig.apiKey.startsWith('PASTE_') &&
+        firebaseConfig.projectId &&
+        !firebaseConfig.projectId.startsWith('PASTE_');
+}
+
+function formatLeaderboardDate(score) {
+    const rawDate = score.createdAt && typeof score.createdAt.toDate === 'function'
+        ? score.createdAt.toDate()
+        : score.date
+            ? new Date(score.date)
+            : null;
+
+    if (!rawDate || Number.isNaN(rawDate.getTime())) return '';
+
+    return rawDate.toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+}
+
+function renderLeaderboard(scores = []) {
+    const topScores = scores.slice(0, 10);
+
+    if (!topScores.length) {
+        leaderboardList.innerHTML = '<li>No scores yet</li>';
+        return;
+    }
+
+    leaderboardList.innerHTML = topScores
+        .map((score, index) => {
+            const date = formatLeaderboardDate(score);
+
+            return `
+                <li>
+                    <span class="leaderboard-rank">#${index + 1}</span>
+                    <span class="leaderboard-player">${escapeHtml(score.name)}</span>
+                    <span class="leaderboard-reps">${score.reps} reps</span>
+                    ${date ? `<span class="leaderboard-date">${date}</span>` : ''}
+                </li>
+            `;
+        })
+        .join('');
+}
+
+function initGlobalLeaderboard() {
+    if (!leaderboardList) return;
+
+    if (typeof firebase === 'undefined') {
+        leaderboardList.innerHTML = '<li>Global leaderboard unavailable</li>';
+        return;
+    }
+
+    if (!isFirebaseConfigured()) {
+        leaderboardList.innerHTML = '<li>Connect Firebase to enable global scores</li>';
+        return;
+    }
+
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        leaderboardDb = firebase.firestore();
+        leaderboardList.innerHTML = '<li>Loading global scores...</li>';
+
+        leaderboardUnsubscribe = leaderboardDb
+            .collection(FIREBASE_COLLECTION)
+            .orderBy('reps', 'desc')
+            .limit(10)
+            .onSnapshot(snapshot => {
+                const scores = snapshot.docs.map(doc => doc.data());
+                renderLeaderboard(scores);
+            }, error => {
+                console.error(error);
+                leaderboardList.innerHTML = '<li>Unable to load global scores</li>';
+            });
+    } catch (error) {
+        console.error(error);
+        leaderboardList.innerHTML = '<li>Unable to connect leaderboard</li>';
+    }
+}
+
+async function addChallengeScore(name, reps) {
+    const safeName = name.trim().slice(0, 18) || 'User';
+
+    if (!leaderboardDb) {
+        setTrackerStatus('Connect Firebase for global scores');
+        return;
+    }
+
+    await leaderboardDb.collection(FIREBASE_COLLECTION).add({
+        name: safeName,
+        reps,
+        date: new Date().toISOString(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+}
+
+function chooseVisibleArm(landmarks) {
+    const left = { shoulder: landmarks[11], elbow: landmarks[13], wrist: landmarks[15] };
+    const right = { shoulder: landmarks[12], elbow: landmarks[14], wrist: landmarks[16] };
+    const visibility = arm =>
+        (arm.shoulder.visibility + arm.elbow.visibility + arm.wrist.visibility) / 3;
+
+    return visibility(left) >= visibility(right) ? left : right;
+}
+
+function hasUpperBodyVisibility(landmarks, arm) {
+    const requiredPoints = [
+        arm.shoulder,
+        arm.elbow,
+        arm.wrist,
+        landmarks[11],
+        landmarks[12],
+        landmarks[23],
+        landmarks[24]
+    ];
+
+    return requiredPoints.every(point => point && point.visibility >= MIN_VISIBILITY);
+}
+
+function countPushup(angle) {
+    const now = Date.now();
+    lowestAngle = Math.min(lowestAngle, angle);
+
+    if (angle < DOWN_ANGLE && pushupStage === 'up' && now - lastRepTime > REP_COOLDOWN_MS) {
+        pushupStage = 'down';
+        downStartTime = now;
+        lowestAngle = angle;
+        setTrackerStatus('Down position');
+        return;
+    }
+
+    if (pushupStage === 'up') {
+        if (angle < 125) {
+            setTrackerStatus('Go lower');
+        }
+        return;
+    }
+
+    if (angle > UP_ANGLE && pushupStage === 'down') {
+        const repDuration = now - downStartTime;
+
+        pushupStage = 'up';
+
+        if (lowestAngle > DOWN_ANGLE) {
+            lowestAngle = 180;
+            setTrackerStatus('Go lower');
+            return;
+        }
+
+        if (repDuration < MIN_REP_MS) {
+            lowestAngle = 180;
+            setTrackerStatus('Too fast');
+            return;
+        }
+
+        currentReps++;
+        repsCount.textContent = currentReps;
+        lastRepTime = now;
+        lowestAngle = 180;
+        setTrackerStatus('Good rep');
+    }
+}
+
 function onPoseResults(results) {
     const ctx = pushupCanvas.getContext('2d');
 
@@ -1822,112 +2043,46 @@ function onPoseResults(results) {
     ctx.drawImage(results.image, 0, 0, pushupCanvas.width, pushupCanvas.height);
 
     if (!results.poseLandmarks) {
-        trackerStatus.textContent = "No body detected";
+        resetRepState();
+        setTrackerStatus('No body detected');
         ctx.restore();
         return;
     }
 
-    const lm = results.poseLandmarks;
+    const landmarks = results.poseLandmarks;
 
-    drawConnectors(ctx, lm, POSE_CONNECTIONS, { color: '#ef4444', lineWidth: 3 });
-    drawLandmarks(ctx, lm, { color: '#fff', radius: 3 });
+    drawConnectors(ctx, landmarks, POSE_CONNECTIONS, { color: '#ef4444', lineWidth: 3 });
+    drawLandmarks(ctx, landmarks, { color: '#ffffff', radius: 3 });
 
-    // choose best visible arm
-    const left = { shoulder: lm[11], elbow: lm[13], wrist: lm[15] };
-    const right = { shoulder: lm[12], elbow: lm[14], wrist: lm[16] };
+    const arm = chooseVisibleArm(landmarks);
 
-    const avg = arm =>
-        (arm.shoulder.visibility + arm.elbow.visibility + arm.wrist.visibility) / 3;
-
-    const arm = avg(left) > avg(right) ? left : right;
-
-    // visibility checks
-    const armVisible =
-        arm.shoulder.visibility > 0.35 &&
-        arm.elbow.visibility > 0.35 &&
-        arm.wrist.visibility > 0.35;
-
-    const bodyVisible =
-        lm[11].visibility > 0.35 &&
-        lm[12].visibility > 0.35 &&
-        lm[23].visibility > 0.25 &&
-        lm[24].visibility > 0.25;
-
-    if (!armVisible || !bodyVisible) {
-        trackerStatus.textContent = "Show full upper body (side view)";
+    if (!hasUpperBodyVisibility(landmarks, arm)) {
+        resetRepState();
+        setTrackerStatus('Show full upper body');
         ctx.restore();
         return;
     }
 
-    const angle = calculateAngle(arm.shoulder, arm.elbow, arm.wrist);
-    const now = Date.now();
-
-    // track minimum angle (depth)
-    if (angle < minAngle) {
-        minAngle = angle;
-    }
-
-    // ================= DOWN =================
-    if (angle < 95 && pushupStage === "up") {
-        pushupStage = "down";
-        downConfirmed = true;
-        trackerStatus.textContent = "Down position";
-    }
-
-    // ================= UP + COUNT =================
-    if (
-        angle > 150 &&
-        pushupStage === "down" &&
-        downConfirmed &&
-        now - lastRepTime > 1200
-    ) {
-        let feedback = "Good rep";
-
-        // depth check
-        if (minAngle > 110) {
-            feedback = "Go lower";
-            minAngle = 180;
-            pushupStage = "up";
-            downConfirmed = false;
-            trackerStatus.textContent = feedback;
-            return;
-        }
-
-        // speed check
-        const repTime = now - lastRepTime;
-        if (repTime < 800) {
-            feedback = "Too fast";
-        }
-
-        currentReps++;
-        repsCount.textContent = currentReps;
-
-        trackerStatus.textContent = feedback;
-
-        pushupStage = "up";
-        downConfirmed = false;
-        lastRepTime = now;
-        minAngle = 180;
-    }
-
+    countPushup(calculateAngle(arm.shoulder, arm.elbow, arm.wrist));
     ctx.restore();
 }
 
-// ================= START =================
 async function startPushupTracker() {
-    pose = new Pose({
-        locateFile: file =>
-            `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-    });
+    if (!pose) {
+        pose = new Pose({
+            locateFile: file =>
+                `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+        });
 
-    pose.setOptions({
-        modelComplexity: 0,
-        smoothLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-    });
+        pose.setOptions({
+            modelComplexity: 0,
+            smoothLandmarks: true,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6
+        });
 
-    pose.onResults(onPoseResults);
+        pose.onResults(onPoseResults);
+    }
 
     camera = new Camera(pushupVideo, {
         onFrame: async () => {
@@ -1940,12 +2095,32 @@ async function startPushupTracker() {
     await camera.start();
 
     isTracking = true;
-    trackerStatus.textContent = "Tracking started";
-    startCameraBtn.innerHTML =
-        '<span class="btn-icon">⏸️</span><span>Stop Camera</span>';
+    setTrackerStatus('Tracking started');
+    startCameraBtn.innerHTML = '<span class="btn-icon">⏸</span><span>Stop Camera</span>';
 }
 
-// ================= STOP =================
+async function stopChallenge(saveScore = false) {
+    clearInterval(challengeInterval);
+    challengeInterval = null;
+    challengeActive = false;
+    challengeSecondsLeft = CHALLENGE_SECONDS;
+    timerValue.textContent = formatChallengeTime(CHALLENGE_SECONDS);
+    challengeBtn.disabled = false;
+    challengeBtn.innerHTML = '<span class="btn-icon">⏱</span><span>1 Minute Challenge</span>';
+
+    if (saveScore) {
+        const nickname = prompt(`Challenge complete: ${currentReps} reps. Enter nickname:`, 'User');
+
+        try {
+            await addChallengeScore(nickname || 'User', currentReps);
+            setTrackerStatus('Challenge saved');
+        } catch (error) {
+            console.error(error);
+            setTrackerStatus('Could not save score');
+        }
+    }
+}
+
 function stopPushupTracker() {
     if (camera) camera.stop();
 
@@ -1954,25 +2129,54 @@ function stopPushupTracker() {
     }
 
     isTracking = false;
-    pushupStage = "up";
-    currentReps = 0;
-    repsCount.textContent = "0";
-    trackerStatus.textContent = "Stopped";
-
-    startCameraBtn.innerHTML =
-        '<span class="btn-icon">📷</span><span>Start Camera</span>';
+    stopChallenge(false);
+    resetRepState(true);
+    setTrackerStatus('Stopped');
+    startCameraBtn.innerHTML = '<span class="btn-icon">📷</span><span>Start Camera</span>';
 }
 
-// ================= BUTTON =================
+async function startChallenge() {
+    try {
+        if (!isTracking) {
+            await startPushupTracker();
+        }
+
+        resetRepState(true);
+        challengeActive = true;
+        challengeSecondsLeft = CHALLENGE_SECONDS;
+        timerValue.textContent = formatChallengeTime(challengeSecondsLeft);
+        challengeBtn.disabled = true;
+        challengeBtn.innerHTML = '<span class="btn-icon">⏱</span><span>Challenge Running</span>';
+        setTrackerStatus('Challenge started');
+
+        challengeInterval = setInterval(() => {
+            challengeSecondsLeft--;
+            timerValue.textContent = formatChallengeTime(challengeSecondsLeft);
+
+            if (challengeSecondsLeft <= 0) {
+                stopChallenge(true);
+            }
+        }, 1000);
+    } catch (error) {
+        console.error(error);
+        setTrackerStatus('Camera error');
+    }
+}
+
 startCameraBtn.addEventListener('click', async () => {
     if (!isTracking) {
         try {
             await startPushupTracker();
-        } catch (e) {
-            console.error(e);
-            trackerStatus.textContent = "Camera error";
+        } catch (error) {
+            console.error(error);
+            setTrackerStatus('Camera error');
         }
     } else {
         stopPushupTracker();
     }
 });
+
+challengeBtn.addEventListener('click', startChallenge);
+timerValue.textContent = formatChallengeTime(CHALLENGE_SECONDS);
+initGlobalLeaderboard();
+
